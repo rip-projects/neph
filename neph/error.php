@@ -12,4 +12,13 @@ class Error {
 
 		static::exception($exception);
 	}
+
+	public static function shutdown() {
+		$error = error_get_last();
+
+		if ( ! is_null($error)) {
+			extract($error, EXTR_SKIP);
+			static::exception(new \ErrorException($message, $type, 0, $file, $line), false);
+		}
+	}
 }

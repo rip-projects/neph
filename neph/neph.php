@@ -9,12 +9,7 @@ class Neph {
 
 	static function path($p) {
 		global $NEPH_CONFIG;
-		$def_config = array(
-			'site' => '../sites/',
-			'sys' => '../neph/',
-			'data' => '../data/',
-			'vendor' => '../vendor/',
-		);
+
 		return ((isset($NEPH_CONFIG[$p])) ? $NEPH_CONFIG[$p] : $def_config[$p]);
 	}
 
@@ -57,23 +52,35 @@ class Neph {
 	}
 }
 
+$cwd = getcwd();
+$def_config = array(
+	'site' => $cwd.'/../sites/',
+	'sys' => $cwd.'/../neph/',
+	'data' => $cwd.'/../data/',
+	'vendor' => $cwd.'/../vendor/',
+);
+$NEPH_CONFIG = $NEPH_CONFIG + $def_config;
+
 require Neph::path('sys').'functions.php';
 require Neph::path('sys').'event.php';
 require Neph::path('sys').'loader.php';
 spl_autoload_register(array('Neph\\Loader', 'load'));
 
 set_exception_handler(function($e) {
-	Error::exception($e);
+	require_once Neph::path('sys').'error.php';
+	\Neph\Error::exception($e);
 });
 
 set_error_handler(function($code, $error, $file, $line) {
-	Error::native($code, $error, $file, $line);
+
+	require_once Neph::path('sys').'error.php';
+	\Neph\Error::native($code, $error, $file, $line);
 });
 
-// register_shutdown_function(function() {
-// 	Error::shutdown();
-// });
-
+register_shutdown_function(function() {
+	require_once Neph::path('sys').'error.php';
+	\Neph\Error::shutdown();
+});
 
 
 Loader::directories(Neph::path('vendor'));

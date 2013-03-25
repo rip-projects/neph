@@ -6,10 +6,15 @@ class URL {
 	}
 
 	static function base() {
-		return Config::get('config/url');	
+		return Config::get('config/url');
 	}
 
 	static function site($uri) {
 		return Config::get('config/url').Config::get('config/index').$uri;
+	}
+
+	static function redirect($uri) {
+		header('Location: '.static::site($uri));
+		exit;
 	}
 }

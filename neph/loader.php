@@ -23,7 +23,13 @@ class Loader {
 			return static::load_controller($class);
 		}
 
-		return static::load_psr($class);
+		if ($try = static::load_psr($class)) {
+			return $try;
+		}
+
+		foreach (static::$namespaces as $namespace => $directory) {
+			return static::load_namespaced('\\Neph\\'.$class, $namespace, $directory);
+		}
 	}
 
 	protected static function load_controller($class) {
@@ -34,7 +40,7 @@ class Loader {
 		$dirpath = strtolower(implode('/', $dirpath));
 		$class_name = strtolower($class_name[0]);
 		$file = $dirpath.'/'.$class_name;
-		
+
 		$directories = static::$directories;
 
 		foreach ((array) $directories as $directory) {

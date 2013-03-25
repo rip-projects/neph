@@ -14,12 +14,11 @@ class View {
 
 		ob_start();
 		include $view_file;
-
 		$content = ob_get_contents();
 		ob_end_clean();
 
-		if (!is_cli() && !empty($data['$response']->layout)) {
-			$content = static::load($data['$response']->layout, array('content' => $content));
+		if (!is_cli() && !empty($data['_response']->layout)) {
+			$content = static::load($data['_response']->layout, array('content' => $content));
 		}
 
 		return $content;

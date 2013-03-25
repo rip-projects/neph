@@ -75,7 +75,7 @@ class Response {
 
 	function __construct($data = '') {
 		$this->data = $data;
-		$this->uri = Request::instance()->uri; 
+		$this->uri = Request::instance()->uri;
 		$this->layout = Config::get('config/layout');
 	}
 
@@ -88,7 +88,7 @@ class Response {
 		$pre_data = '';
 		$pre_data = ob_get_clean();
 
-		$this->data['$response'] = $this;
+		$this->data['_response'] = $this;
 		$view = (empty($this->view)) ? '' : $this->view;
 		if (empty($view)) {
 			$view = '/'. (isset($this->uri->segments[2]) ? $this->uri->segments[2] : 'index');
@@ -119,7 +119,7 @@ class Response {
 		}
 		$this->render();
 		echo $this->content;
-		
+
 		return ($this->status == 200);
 	}
 }
