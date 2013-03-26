@@ -85,16 +85,14 @@ class Response {
 	}
 
 	function render() {
-		$pre_data = '';
-		$pre_data = ob_get_clean();
-
+		$this->data['_pre_data'] = ob_get_clean();
 		$this->data['_response'] = $this;
 		$view = (empty($this->view)) ? '' : $this->view;
 		if (empty($view)) {
 			$view = '/'. (isset($this->uri->segments[2]) ? $this->uri->segments[2] : 'index');
 		}
 		if ($this->status == 200) {
-			$this->content = $pre_data.View::load($view, $this->data);
+			$this->content = View::load($view, $this->data);
 		} else {
 			if (is_cli()) {
 				Console::error($this->status.' '.$this->errors[0]);
@@ -103,7 +101,7 @@ class Response {
 				}
 				return;
 			} else {
-				$this->content = $pre_data.View::load('/error/'.$this->status, $this->data);
+				$this->content = View::load('/error/'.$this->status, $this->data);
 			}
 		}
 	}

@@ -31,7 +31,6 @@ class RequestImpl {
 		} else {
 			$uri = (isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '/';
 		}
-
 		$this->uri = new URI($uri);
 	}
 
