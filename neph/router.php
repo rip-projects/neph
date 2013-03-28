@@ -73,7 +73,17 @@ class RouterImpl {
 	function execute($request, $fn) {
 		$params = array_slice($request->uri->segments, 3);
 
+		Event::emit('router.pre_execute', array(
+			'params' => &$params,
+			));
+
 		$response = call_user_func_array($fn, $params);
+
+		Event::emit('router.post_execute', array(
+			'response' => &$response,
+			));
 		return Response::instance($response);
 	}
 }
+
+Router::init();

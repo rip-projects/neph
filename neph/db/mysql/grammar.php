@@ -9,4 +9,9 @@ class Grammar extends \Neph\DB\Query\Grammar {
 	 */
 	protected $wrapper = '`%s`';
 
+	function columns($q) {
+
+		return 'SHOW COLUMNS '.$this->select($q);
+	}
+
 }

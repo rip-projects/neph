@@ -16,6 +16,20 @@ class Event {
 		return $results;
 	}
 
+	static function until($event, $data) {
+		if (!empty(static::$events[$event])) {
+			foreach (static::$events[$event] as $fn) {
+				if (is_callable($fn)) {
+					$result = $fn($data);
+					if (!empty($result)) {
+						return $result;
+					}
+				}
+			}
+		}
+		return;
+	}
+
 	static function on($event, $fn) {
 		static::$events[$event][] = $fn;
 	}

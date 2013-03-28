@@ -1,5 +1,9 @@
 <?php namespace NephModules\Module;
 
-class Module_Controller extends \Nephmodules\Crud\Crud_Controller {
+use Neph\Response;
+use Neph\Console;
 
+
+class Module_Controller extends \Nephmodules\Crud\Crud_Controller {
+	
 }

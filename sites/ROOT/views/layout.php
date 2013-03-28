@@ -1,6 +1,7 @@
 <?php 
 use Neph\URL;
-
+use Neph\Console;
+use Neph\Response;
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -11,8 +12,13 @@ use Neph\URL;
     <link href="<?php echo URL::theme('css/bootstrap-responsive.css') ?>" rel="stylesheet" />
 
     <style>
-    	body #body { margin-top: 41px; padding: 10px 0;}
+    	body { padding-top: 41px; box-sizing: border-box;}
+    	body #body { padding: 10px 0; }
     </style>
+
+    <script type="text/javascript" src="<?php echo URL::theme('js/jquery-1.9.1.min.js') ?>"></script>
+	<script type="text/javascript" src="<?php echo URL::theme('js/bootstrap.min.js') ?>"></script>
+	<script type="text/javascript" src="<?php echo URL::theme('js/underscore-min.js') ?>"></script>
 </head>
 <body>
 	<div class="navbar navbar-inverse navbar-fixed-top">
@@ -37,7 +43,5 @@ use Neph\URL;
 		<?php echo $content ?>
     </div>
 
-	<script type="text/javascript" src="<?php echo URL::theme('js/jquery-1.9.1.min.js') ?>"></script>
-	<script type="text/javascript" src="<?php echo URL::theme('js/bootstrap.min.js') ?>"></script>
 </body>
 </html>

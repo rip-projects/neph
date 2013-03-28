@@ -1,5 +1,7 @@
 <?php namespace Neph;
 
+error_reporting(0);
+
 define('NEPH_START', microtime(true));
 
 ob_start('mb_output_handler');
@@ -30,9 +32,6 @@ class Neph {
 	}
 
 	static function init() {
-		Config::init();
-		Router::init();
-
 		$start_file = static::path('site').static::site().'/start.php';
 		if (is_readable($start_file)) {
 			include $start_file;
@@ -72,7 +71,6 @@ set_exception_handler(function($e) {
 });
 
 set_error_handler(function($code, $error, $file, $line) {
-
 	require_once Neph::path('sys').'error.php';
 	\Neph\Error::native($code, $error, $file, $line);
 });

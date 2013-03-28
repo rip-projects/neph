@@ -4,6 +4,7 @@ class Error {
 	public static function exception($exception, $trace = true) {
 		$response = Response::error(500, null, array('exception' => $exception));
 		$response->send();
+		exit(1);
 	}
 
 	public static function native($code, $error, $file, $line) {
@@ -17,8 +18,11 @@ class Error {
 		$error = error_get_last();
 
 		if ( ! is_null($error)) {
-			extract($error, EXTR_SKIP);
-			static::exception(new \ErrorException($message, $type, 0, $file, $line), false);
+			$response = Response::error(500, null, array('error' => $error));
+			$response->send();
+			exit;
+			// extract($error, EXTR_SKIP);
+			// static::exception(new \ErrorException($message, $type, 0, $file, $line), false);
 		}
 	}
 }

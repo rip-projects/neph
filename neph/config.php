@@ -97,3 +97,5 @@ class ConfigImpl {
 		}
 	}
 };
+
+Config::init();

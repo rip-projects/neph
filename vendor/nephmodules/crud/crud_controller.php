@@ -3,6 +3,7 @@
 use \Neph\Console;
 use \Neph\URL;
 use \Neph\DB;
+use \Neph\Event;
 
 class Crud_Controller {
 	var $name;
@@ -15,6 +16,20 @@ class Crud_Controller {
 			if (empty($this->name)) $this->name = $exploded[0];
 			if (empty($this->model)) $this->model = $exploded[0];
 		}
+
+		$this->columns = DB::table($this->name)->columns();
+
+		Event::on('router.post_execute', function($data) {
+			Event::on('view.filter_content', function($d) use ($data) {
+				$d['content'] = $d['content'].'
+<script type="text/javascript">
+	window.CRUD = {
+		publish: '.json_encode($data['response']['publish']).',
+		columns: '.json_encode($data['response']['columns']).'
+	};
+</script>';
+			});
+		});
 	}
 	function action_index() {
 		URL::redirect('/'.$this->name.'/entries');
@@ -23,6 +38,7 @@ class Crud_Controller {
 	function action_entries() {
 		$data = array();
 		$data['publish']['entries'] = DB::table($this->name)->get();
+		$data['columns'] = $this->columns;
 		return $data;
 	}
 }

@@ -725,6 +725,13 @@ class Query {
 		return $results;
 	}
 
+	public function columns()
+	{
+		$sql = $this->grammar->columns($this);
+		$results = $this->connection->query($sql);
+		return $results;
+	}
+
 	/**
 	 * Get an aggregate value.
 	 *
