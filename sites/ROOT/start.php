@@ -1,10 +1,10 @@
 <?php 
 
-use \Neph\Controller;
-use \Neph\Router;
-use \Neph\Response;
-use \Neph\Event;
-use \Neph\Console;
+use \Neph\Core\Controller;
+use \Neph\Core\Router;
+use \Neph\Core\Response;
+use \Neph\Core\Event;
+use \Neph\Core\Console;
 
 Controller::register('\\NephModules\\Module');
 Controller::register('\\NephModules\\User');

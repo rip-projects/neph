@@ -1,7 +1,7 @@
 <?php 
-use Neph\URL;
-use Neph\Console;
-use Neph\Response;
+use Neph\Core\URL;
+use Neph\Core\Console;
+use Neph\Core\Response;
 ?><!doctype html>
 <html lang="en">
 <head>

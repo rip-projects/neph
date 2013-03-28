@@ -11,9 +11,9 @@ return array(
 			'password' 	=> 'password',
 		),
 	),
-	'drivers' => array(
-		'mysql' => '\\Neph\\DB\\MySQL',
-	),
+	// 'drivers' => array(
+	// 	'mysql' => '\\Neph\\Core\\DB\\MySQL',
+	// ),
 	'fetch' => PDO::FETCH_CLASS,
 	'profile' => false,
 );
