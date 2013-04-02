@@ -6,53 +6,27 @@ class DB {
 
 	static public $connections = array();
 
-	static public $registrar = array();
-
 	static function connection($connection = '') {
 		if (!$connection) {
 			$connection = Config::get('db/default');
 		}
 
-		if ( ! isset(static::$connections[$connection])) {
+		if (!isset(static::$connections[$connection])) {
 			$config = Config::get("db/connections/{$connection}");
-			if (is_null($config)) {
+			if (!isset($config)) {
 				throw new \Exception("Database connection is not defined for [$connection].");
 			}
 
-			static::$connections[$connection] = new Connection(static::connect($config), $config);
+			$driver_class = Config::get('db/drivers/'.$config['driver'], '\\Neph\\Core\\DB\\'.$config['driver']).'\\Connection';
+
+			static::$connections[$connection] = new $driver_class($config);
+			static::$connections[$connection]->connect();
 		}
 
 		return static::$connections[$connection];
 	}
 
-	/**
-	 * Get a PDO database connection for a given database configuration.
-	 *
-	 * @param  array  $config
-	 * @return PDO
-	 */
-	protected static function connect($config) {
-		return static::connector($config['driver'])->connect($config);
-	}
-
-	/**
-	 * Create a new database connector instance.
-	 *
-	 * @param  string     $driver
-	 * @return Database\Connectors\Connector
-	 */
-	protected static function connector($driver) {
-		if (isset(static::$registrar[$driver])) {
-			$resolver = static::$registrar[$driver]['connector'];
-
-			return $resolver();
-		}
-
-		$driver_class = Config::get('db/drivers/'.$driver, '\\Neph\\Core\\DB\\'.$driver).'\\Connector';
-		return new $driver_class();
-	}
-
-	static function table($table, $connection = '') {
-		return static::connection($connection)->table($table);
+	static function __callStatic($method, $args) {
+		return call_user_func_array(array(static::connection(), $method), $args);
 	}
 }

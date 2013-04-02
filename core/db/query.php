@@ -725,13 +725,6 @@ class Query {
 		return $results;
 	}
 
-	public function columns()
-	{
-		$sql = $this->grammar->columns($this);
-		$results = $this->connection->query($sql);
-		return $results;
-	}
-
 	/**
 	 * Get an aggregate value.
 	 *
@@ -950,6 +943,20 @@ class Query {
 		}
 
 		throw new \Exception("Method [$method] is not defined on the Query class.");
+	}
+
+	public function columns()
+	{
+		$sql = $this->grammar->columns($this);
+		$results = $this->connection->query($sql);
+		return $results;
+	}
+
+	public function check()
+	{
+		$sql = $this->grammar->check($this);
+		$results = $this->connection->query($sql);
+		return $results;
 	}
 
 }

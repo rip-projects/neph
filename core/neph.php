@@ -1,5 +1,7 @@
 <?php namespace Neph\Core;
 
+use \Neph\Core\Error;
+
 // error_reporting(0);
 
 define('NEPH_START', microtime(true));
@@ -67,17 +69,17 @@ spl_autoload_register(array('Neph\\Core\\Loader', 'load'));
 
 set_exception_handler(function($e) {
 	require_once Neph::path('sys').'error.php';
-	\Neph\Core\Error::exception($e);
+	Error::exception($e);
 });
 
 set_error_handler(function($code, $error, $file, $line) {
 	require_once Neph::path('sys').'error.php';
-	\Neph\Core\Error::native($code, $error, $file, $line);
+	Error::native($code, $error, $file, $line);
 });
 
 register_shutdown_function(function() {
 	require_once Neph::path('sys').'error.php';
-	\Neph\Core\Error::shutdown();
+	Error::shutdown();
 });
 
 

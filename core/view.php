@@ -25,7 +25,7 @@ class View {
 	}
 
 	function render($arg_data) {
-		
+
 		if (!empty($arg_data)) {
 			extract($arg_data);
 		}

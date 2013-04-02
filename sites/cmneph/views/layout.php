@@ -1,4 +1,4 @@
-<?php 
+<?php
 use Neph\Core\URL;
 use Neph\Core\Console;
 use Neph\Core\Response;
@@ -29,10 +29,15 @@ use Neph\Core\Response;
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="<?php echo URL::base() ?>">NEPH</a>
+				<a class="brand" href="<?php echo URL::base() ?>">CMNeph</a>
 				<div class="nav-collapse collapse">
 					<ul class="nav">
-						<li class=""><a href="<?php echo URL::site('/module') ?>">Module</a></li>
+						<li>
+                            <a href="#">Admin</a>
+                            <ul class="nav">
+                                <li><a href="<?php echo URL::site('/module') ?>">Module</a></li>
+                            </ul>
+                        </li>
 					</ul>
 				</div>
 			</div>

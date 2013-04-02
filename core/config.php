@@ -90,10 +90,12 @@ class ConfigImpl {
 
 	function init() {
 		if (!$this->get('config/url')) {
-			$sep = $this->get('config/index').((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '');
-			$req = explode($sep, $_SERVER['REQUEST_URI'], 2);
-			$url = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) ).$req[0];
-			$this->set('config/url', $url);
+			if ($this->get('config/index')) {
+				$sep = $this->get('config/index').((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '');
+				$req = explode($sep, $_SERVER['REQUEST_URI'], 2);
+				$url = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) ).$req[0];
+				$this->set('config/url', $url);
+			}
 		}
 	}
 };

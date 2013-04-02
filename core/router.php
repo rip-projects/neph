@@ -44,7 +44,7 @@ class RouterImpl {
 			return $this->execute($request, $this->routes[$request->method()][$request->uri->pathinfo]);
 		}
 
-		if ($request->uri->pathinfo === '/' && Controller::has('home')) {
+		if ($request->uri->pathinfo === '/') {
 			Request::instance()->forward('/home/index');
 			return $this->route(Request::instance());
 		} elseif (empty($request->uri->segments[2])) {
@@ -60,6 +60,8 @@ class RouterImpl {
 				$action = $request->method().'_'.$action;
 			} elseif (method_exists($controller, 'action_'.$action)) {
 				$action = 'action_'.$action;
+			} elseif (method_exists($controller, 'execute')) {
+				return $controller->execute($request, $action);
 			} else {
 				return Response::error(404);
 			}

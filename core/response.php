@@ -1,7 +1,5 @@
 <?php namespace Neph\Core;
 
-use \Neph\Core\Response\Error;
-
 class Response {
 	static public $default;
 
@@ -15,7 +13,7 @@ class Response {
 	var $post_data = '';
 
 	static function error($status = 500, $message = '', $data = '') {
-		return new Error($status, $message, $data);
+		return new \Neph\Core\Response\Error($status, $message, $data);
 	}
 
 	static function instance($response) {
@@ -55,7 +53,7 @@ class Response {
 		Event::emit('response.pre_render', array(
 			'response' => $this
 			));
-		
+
 		if (empty($this->view)) {
 			$this->view = '/'. (isset($this->uri->segments[2]) ? $this->uri->segments[2] : 'index');
 		}
@@ -75,6 +73,8 @@ class Response {
 				$view->layout($this->layout);
 			}
 			$this->content = $view->render($this->data);
+		} else {
+			$this->content = $this->pre_data;
 		}
 
 		return $this->content;

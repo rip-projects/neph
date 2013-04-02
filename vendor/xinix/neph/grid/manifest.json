@@ -1,7 +1,0 @@
-{
-	"name": "xinix/neph/grid",
-	"type": "library",
-	"require": {
-        "neph/core": "0.0.1"
-    }
-}

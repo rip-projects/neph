@@ -1,38 +1,41 @@
 <?php namespace Neph\Core;
 
 class Controller {
-	static private $modules = array();
 
 	static function load($module) {
-		$ns = static::get($module);
-		if (empty($ns)) {
-			return '';
+		$controller = Event::until('controller.load', array('module' => $module));
+		if (!empty($controller)) {
+			return $controller;
 		}
-		$class = Loader::module($ns, $module);
+
+		$class = Loader::module($module);
 		if (!empty($class)) {
 			$controller = new $class;
 			return $controller;
 		}
 	}
 
-	static function get($module) {
-		if (isset(static::$modules[$module])) return static::$modules[$module];
-
-		if (is_readable(Neph::path('site').Neph::site().'/modules/'.$module)) return $module;
-	}
-
-	static function has($module) {
-		$dir = static::get($module);
-		return (!empty($dir));
-	}
-
 	static function register($module) {
-		$exploded = explode('\\', $module);
-		$module_name = strtolower($exploded[count($exploded)-1]);
-		static::$modules[$module_name] = $module;
+		Loader::register_module($module);
 	}
 
-	function action_index() {
+	function execute($request, $method) {
+		$params = array_slice($request->uri->segments, 3);
 
+		Event::emit('router.pre_execute', array(
+			'params' => &$params,
+			));
+
+		$view = Loader::resource_file('/views/'.$method.'.php');
+		if (empty($view)) {
+			return Response::error(404);
+		}
+
+		$response = '';
+
+		Event::emit('router.post_execute', array(
+			'response' => &$response,
+			));
+		return Response::instance($response);
 	}
 }

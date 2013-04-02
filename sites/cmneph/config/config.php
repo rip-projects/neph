@@ -1,7 +1,7 @@
 <?php
 
 return array(
-	'layout' => '/layouts/main',
+	'layout' => '/layout',
 
 	'index' => 'index.php',
 
