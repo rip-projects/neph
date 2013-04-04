@@ -21,10 +21,14 @@ use Neph\Core\URL;
 		<hr>
 		<h3><?php echo isset($data['exception']) ? $data['exception']->getMessage() : $message ?></h3>
 
-		<pre><b>Error:</b>
-<?php echo isset($data['error']) ? $data['error']['message'].' ('.$data['error']['type'].")\n    at ".$data['error']['file'].':'.$data['error']['line'] : '' ?></pre>
-		<pre><b>Exception: </b>
-<?php echo isset($data['exception']) ? $data['exception']->getTraceAsString() : 'No stack trace' ?></pre>
+		<?php if (isset($data['error'])): ?>
+		<pre><b>Error:</b><?php echo "\n".$data['error']['message'].' ('.$data['error']['type'].")\n    at ".$data['error']['file'].':'.$data['error']['line'] ?></pre>
+		<?php endif ?>
+
+		<?php if (isset($data['exception'])): ?>
+		<pre><b>Exception: </b><?php echo "\n".$data['exception']->getTraceAsString() ?></pre>
+		<?php endif ?>
+
 	</div>
 </body>
 </html>

@@ -29,7 +29,7 @@ use Neph\Core\Response;
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="<?php echo URL::base() ?>">CMNeph</a>
+				<a class="brand" href="<?php echo URL::site() ?>">CMNeph</a>
 				<div class="nav-collapse collapse">
 					<ul class="nav">
 						<li>

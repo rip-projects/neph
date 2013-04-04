@@ -5,6 +5,8 @@ use \Neph\Core\DB;
 use \Neph\Core\DB\ORM\Model;
 use \Neph\Core\Event;
 use \Neph\Core\Controller;
+use \Neph\Core\Session;
+use \Neph\Core\Cookie;
 
 class Crud_Controller extends Controller {
 	var $name;
@@ -47,8 +49,7 @@ class Crud_Controller extends Controller {
 		return $data;
 	}
 
-	function get_add() {
-		$data = array();
-		return $data;
+	function post_add() {
+
 	}
 }

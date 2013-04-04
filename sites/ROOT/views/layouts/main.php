@@ -38,7 +38,7 @@ use Neph\Core\Response;
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="<?php echo URL::base() ?>">NEPH</a>
+				<a class="brand" href="<?php echo URL::site() ?>">NEPH</a>
 				<div class="nav-collapse collapse">
 					<ul class="nav">
 						<li class=""><a href="<?php echo URL::site('/user') ?>">User</a></li>

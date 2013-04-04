@@ -41,4 +41,10 @@ class RequestImpl {
 	function method() {
 		return (is_cli()) ? 'GET' : $_SERVER['REQUEST_METHOD'];
 	}
+
+	function cookie($key, $value = '__GET__') {
+		if ($value === '__GET__') {
+			return (isset($_COOKIE[$key])) ? $_COOKIE[$key] : NULL;
+		}
+	}
 }

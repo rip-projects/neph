@@ -7,10 +7,9 @@ use \Xinix\Neph\Grid\Grid;
 
 <div class="row-fluid">
     <div class="span6">
-        <ul class="breadcrumb">
-            <li><a href="<?php echo URL::site('/') ?>">Home</a> <span class="divider">/</span></li>
-            <li class="active"><?php echo String::humanize($_response->uri->segments[1]) ?></li>
-        </ul>
+        <?php echo $crud->breadcrumb(array(
+            'User' => '/user',
+        )) ?>
     </div>
     <div class="span6">
         <div class="pull-right">

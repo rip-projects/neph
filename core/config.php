@@ -93,9 +93,19 @@ class ConfigImpl {
 			if ($this->get('config/index')) {
 				$sep = $this->get('config/index').((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '');
 				$req = explode($sep, $_SERVER['REQUEST_URI'], 2);
-				$url = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) ).$req[0];
+				$domain = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) );
+				$url = $domain.$req[0];
 				$this->set('config/url', $url);
+				$this->set('config/base_path', $req[0]);
 			}
+		}
+
+		if (!$this->get('config/key')) {
+			$this->set('config/key', 'password');
+		}
+
+		if (!$this->get('config/encoding')) {
+			$this->set('config/encoding', 'utf8');
 		}
 	}
 };

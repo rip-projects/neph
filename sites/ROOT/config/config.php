@@ -6,4 +6,8 @@ return array(
 	'index' => 'index.php',
 
 	'theme' => 'bootstrap',
+
+    'encoding' => 'utf8',
+
+    'key' => 'password',
 );

@@ -5,6 +5,7 @@ use \Neph\Core\Error;
 // error_reporting(0);
 
 define('NEPH_START', microtime(true));
+define('MB_STRING', (int) function_exists('mb_get_info'));
 
 ob_start('mb_output_handler');
 
@@ -41,6 +42,11 @@ class Neph {
 
 		// Starting the routing activity
 		Response::$default = Router::route();
+
+		if (!is_cli() && Config::get('session/default', '') !== '') {
+			Session::save();
+		}
+
 		$success = Response::$default->send();
 
 		if (is_cli()) {

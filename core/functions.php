@@ -47,3 +47,11 @@ function class_basename($class)
 
     return basename(str_replace('\\', '/', $class));
 }
+
+function l($message, $args = '') {
+    return $message;
+}
+
+function value($value) {
+    return (is_callable($value) and ! is_string($value)) ? call_user_func($value) : $value;
+}

@@ -9,7 +9,11 @@ class URL {
 		return Config::get('config/url');
 	}
 
-	static function site($uri) {
+	static function site($uri = '') {
+		if (empty($uri)) return Config::get('config/url');
+
+		if (preg_match('#^[a-z]+:\/\/#', $uri)) return $uri;
+
 		return Config::get('config/url').Config::get('config/index').$uri;
 	}
 
