@@ -134,7 +134,7 @@ class Cookie {
      */
     public static function hash($value)
     {
-        return hash_hmac('sha1', $value, Config::get('config/key'));
+        return hash_hmac('sha1', $value, Config::get('config.key'));
     }
 
     /**

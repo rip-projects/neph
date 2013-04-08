@@ -87,30 +87,32 @@ class Loader {
 
 		if (isset(static::$module_namespaces[$module])) {
 			$ns = static::$module_namespaces[$module];
+			if (!$ns) {
+				return '';
+			}
+
 			$dir = strtolower(str_replace(array('\\', '_'), '/', $ns));
-			foreach ($directories as $directory) {
+
+			foreach (static::$directories as $directory) {
 				if (is_readable($directory.$dir)) {
 					static::$module_paths[$module] = $directory.$dir;
 					if (is_readable($directory.$dir.'/'. $module.'_controller.php')) {
 						return $ns.'\\'.$module.'_Controller';
 					} else {
-						return '\\Neph\\Core\\Controller';
+						return '';
 					}
 				}
 			}
-		} elseif (is_readable(Neph::path('site').Neph::site().'/modules/'.$module)) {
-			$dir = Neph::path('site').Neph::site().'/modules/'.$module;
-			if (is_readable($dir)) {
-				static::$module_paths[$module] = $dir;
-				if (is_readable($dir.'/'.$module.'_controller.php')) {
-					require $dir.'/'.$module.'_controller.php';
-					return $module.'_Controller';
-				} else {
-					return '\\Neph\\Core\\Controller';
-				}
+		} elseif (is_readable($dir = Neph::path('site').Neph::site().'/modules/'.$module)) {
+			static::$module_paths[$module] = $dir;
+			if (is_readable($dir.'/'.$module.'_controller.php')) {
+				require $dir.'/'.$module.'_controller.php';
+				return $module.'_Controller';
+			} else {
+				return '';
 			}
 		} else {
-			throw new Exception('No module ['.$module.'] available!');
+			throw new \Exception('No module ['.$module.'] available!');
 		}
 	}
 
@@ -141,9 +143,7 @@ class Loader {
 		}
 	}
 
-	public static function register_module($module) {
-		$exploded = explode('\\', $module);
-		$module_name = strtolower($exploded[count($exploded)-1]);
+	public static function register_module($module_name, $module = '') {
 		static::$module_namespaces[$module_name] = $module;
 	}
 

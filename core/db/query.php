@@ -831,7 +831,7 @@ class Query {
 		}
 		else
 		{
-			return (int) $this->connection->pdo->lastInsertId();
+			return (int) $this->connection->last_insert_id();
 		}
 	}
 

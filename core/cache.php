@@ -7,7 +7,7 @@ class Cache {
     public static $drivers = array();
 
     public static function driver($driver = null) {
-        if (is_null($driver)) $driver = Config::get('cache/driver');
+        if (is_null($driver)) $driver = Config::get('cache.driver');
 
         if ( ! isset(static::$drivers[$driver])) {
             static::$drivers[$driver] = static::factory($driver);
@@ -17,8 +17,8 @@ class Cache {
     }
 
     protected static function factory($driver) {
-        $driver_class = Config::get('db/drivers/'.$driver, '\\Neph\\Core\\Cache\\Drivers\\'.$driver);
-        $d = new $driver_class(Config::get('cache/key'), Config::get('cache/connections/'.$driver, array()));
+        $driver_class = Config::get('db.drivers.'.$driver, '\\Neph\\Core\\Cache\\Drivers\\'.$driver);
+        $d = new $driver_class(Config::get('cache.key'), Config::get('cache.connections.'.$driver, array()));
         if (empty($d)) {
             throw new \Exception("Cache driver [{$driver}] is not supported.");
         }

@@ -26,7 +26,7 @@ class Payload {
 		$default_config = array(
 			'cookie' => 'SESSION',
 			'lifetime' => 60 * 15,
-			'path' => Config::get('config/base_path'),
+			'path' => Config::get('config.base_path'),
 			'domain' => $_SERVER['HTTP_HOST'],
 			'secure' => false,
 		);
@@ -126,7 +126,7 @@ class Payload {
 		if (method_exists($this->driver, 'sweep')) {
 			$sweepage = $this->config['sweepage'];
 			if (mt_rand(1, $sweepage[1]) <= $sweepage[0]) {
-				$this->driver->sweep(time() - Config::get('session/lifetime'));
+				$this->driver->sweep(time() - Config::get('session.lifetime'));
 			}
 		}
 	}

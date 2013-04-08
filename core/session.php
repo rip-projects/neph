@@ -9,13 +9,13 @@ class Session {
     const csrf_token = 'csrf_token';
 
     public static function load() {
-        static::$instance = new Session\Payload(static::factory(Config::get('session/default')));
-        static::$instance->load(Cookie::get(Config::get('session/cookie', 'SESSION')));
+        static::$instance = new Session\Payload(static::factory(Config::get('session.default')));
+        static::$instance->load(Cookie::get(Config::get('session.cookie', 'SESSION')));
     }
 
     public static function factory($name) {
-        $config = Config::get('session/connections/' . $name);
-        $driver_class = Config::get('db/drivers/'.$config['driver'], '\\Neph\\Core\\Session\\Drivers\\'.$config['driver']);
+        $config = Config::get('session.connections.' . $name);
+        $driver_class = Config::get('db.drivers.'.$config['driver'], '\\Neph\\Core\\Session\\Drivers\\'.$config['driver']);
         return new $driver_class($config);
     }
 

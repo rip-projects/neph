@@ -23,7 +23,7 @@ class String {
     }
 
     protected static function encoding() {
-        return static::$encoding ?: static::$encoding = Config::get('config/encoding');
+        return static::$encoding ?: static::$encoding = Config::get('config.encoding');
     }
 
     public static function length($value) {

@@ -10,6 +10,9 @@
     'Model' => '\\Neph\\Core\\DB\\ORM\\Model',
 );
 
-if ( !is_cli() and Config::get('session/default', '') !== '') {
+
+Controller::register('user');
+
+if ( !is_cli() and Config::get('session.default', '') !== '') {
     Session::load();
 }

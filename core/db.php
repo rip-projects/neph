@@ -8,16 +8,16 @@ class DB {
 
 	static function connection($connection = '') {
 		if (!$connection) {
-			$connection = Config::get('db/default');
+			$connection = Config::get('db.default');
 		}
 
 		if (!isset(static::$connections[$connection])) {
-			$config = Config::get("db/connections/{$connection}");
+			$config = Config::get("db.connections.{$connection}");
 			if (!isset($config)) {
 				throw new \Exception("Database connection is not defined for [$connection].");
 			}
 
-			$driver_class = Config::get('db/drivers/'.$config['driver'], '\\Neph\\Core\\DB\\'.$config['driver']).'\\Connection';
+			$driver_class = Config::get('db.drivers.'.$config['driver'], '\\Neph\\Core\\DB\\'.$config['driver']).'\\Connection';
 
 			static::$connections[$connection] = new $driver_class($config);
 			static::$connections[$connection]->connect();

@@ -36,7 +36,7 @@ abstract class Connection {
     protected function grammar() {
         if (isset($this->grammar)) return $this->grammar;
 
-        $grammar_class = Config::get('db/drivers/'.$this->config['driver'], '\\Neph\\Core\\DB\\'.$this->config['driver']).'\\Grammar';
+        $grammar_class = Config::get('db.drivers.'.$this->config['driver'], '\\Neph\\Core\\DB\\'.$this->config['driver']).'\\Grammar';
         return $this->grammar = new $grammar_class($this);
     }
 
@@ -46,14 +46,18 @@ abstract class Connection {
         list($statement, $result) = $this->execute($sql, $bindings);
 
         if (stripos($sql, 'select') === 0 || stripos($sql, 'show') === 0) {
-            return $this->fetch($statement, Config::get('db/fetch'));
+            return $this->fetch($statement, Config::get('db.fetch'));
         } elseif (stripos($sql, 'update') === 0 or stripos($sql, 'delete') === 0) {
             return $statement->rowCount();
         } elseif (stripos($sql, 'insert') === 0 and stripos($sql, 'returning') !== false) {
-            return $this->fetch($statement, Config::get('db/fetch'));
+            return $this->fetch($statement, Config::get('db.fetch'));
         } else {
             return $result;
         }
+    }
+
+    public function last_insert_id() {
+        return $this->connection->lastInsertId();
     }
 
     protected function execute($sql, $bindings = array())
@@ -108,7 +112,7 @@ abstract class Connection {
         // Once we have executed the query, we log the SQL, bindings, and
         // execution time in a static array that is accessed by all of
         // the connections actively being used by the application.
-        if (Config::get('db/profile'))
+        if (Config::get('db.profile'))
         {
             $this->log($sql, $bindings, $start);
         }

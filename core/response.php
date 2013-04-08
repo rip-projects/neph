@@ -29,6 +29,10 @@ class Response {
             return $response;
         }
 
+        if (Request::instance()->is_rest()) {
+            return new \Neph\Core\Response\Json($response);
+        }
+
         return new static($response);
     }
 
@@ -39,7 +43,7 @@ class Response {
             $this->data = (array) $data;
         }
         $this->uri = Request::instance()->uri;
-        $this->layout = Config::get('config/layout');
+        $this->layout = Config::get('config.layout');
     }
 
     function view($view) {

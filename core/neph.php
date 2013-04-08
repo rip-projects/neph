@@ -43,7 +43,7 @@ class Neph {
 		// Starting the routing activity
 		Response::$default = Router::route();
 
-		if (!is_cli() && Config::get('session/default', '') !== '') {
+		if (!is_cli() && Config::get('session.default', '') !== '') {
 			Session::save();
 		}
 

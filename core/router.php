@@ -53,38 +53,38 @@ class RouterImpl {
 		}
 
 		$controller = Controller::load($request->uri->segments[1]);
+
 		if ($controller) {
 			$params = array_slice($request->uri->segments, 3);
-			$action = $request->uri->segments[2];
-			if (method_exists($controller, $request->method().'_'.$action)) {
-				$action = $request->method().'_'.$action;
-			} elseif (method_exists($controller, 'action_'.$action)) {
-				$action = 'action_'.$action;
-			} elseif (method_exists($controller, 'execute')) {
-				return $controller->execute($request, $action);
+
+			Event::emit('router.pre_execute', array(
+				'params' => &$params,
+				));
+
+			if (method_exists($controller, 'execute')) {
+				$response = $controller->execute($request);
 			} else {
-				return Response::error(404);
+
+				if (method_exists($controller, $request->method().'_'.$request->uri->segments[2])) {
+					$action = $request->method().'_'.$request->uri->segments[2];
+				} elseif (method_exists($controller, 'action_'.$request->uri->segments[2])) {
+					$action = 'action_'.$request->uri->segments[2];
+				} else {
+					return Response::error(404);
+				}
+				$response = call_user_func_array($fn, $params);
 			}
-			return $this->execute($request, array($controller, $action));
+
+			Event::emit('router.post_execute', array(
+				'response' => &$response,
+				));
+
+			return Response::instance($response);
+
 		}
 
 		// 404
 		return Response::error(404);
-	}
-
-	function execute($request, $fn) {
-		$params = array_slice($request->uri->segments, 3);
-
-		Event::emit('router.pre_execute', array(
-			'params' => &$params,
-			));
-
-		$response = call_user_func_array($fn, $params);
-
-		Event::emit('router.post_execute', array(
-			'response' => &$response,
-			));
-		return Response::instance($response);
 	}
 }
 

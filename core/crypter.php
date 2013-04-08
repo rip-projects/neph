@@ -131,7 +131,7 @@ class Crypter {
     {
         if (MB_STRING)
         {
-            $pad = ord(mb_substr($value, -1, 1, Config::get('config/encoding')));
+            $pad = ord(mb_substr($value, -1, 1, Config::get('config.encoding')));
         }
         else
         {
@@ -147,7 +147,7 @@ class Crypter {
             {
                 if (MB_STRING)
                 {
-                    return mb_substr($value, 0, String::length($value) - $pad, Config::get('config/encoding'));
+                    return mb_substr($value, 0, String::length($value) - $pad, Config::get('config.encoding'));
                 }
 
                 return substr($value, 0, String::length($value) - $pad);
@@ -172,7 +172,7 @@ class Crypter {
      */
     protected static function key()
     {
-        return Config::get('config/key');
+        return Config::get('config.key');
     }
 
 }
