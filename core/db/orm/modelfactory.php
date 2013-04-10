@@ -24,6 +24,10 @@ class ModelFactory {
         return $this->query()->get();
     }
 
+    function _delete($arg) {
+        return $this->query()->where($this->key, '=', $arg)->delete();
+    }
+
     function _find($arg) {
         return $this->query()->find($arg);
     }
@@ -38,11 +42,7 @@ class ModelFactory {
         if ($this->model) {
             return call_user_func_array(array($this->model, $method), $args);
         } else {
-            if (!method_exists($this, '_'.$method)) {
-                throw new \Exception('Method [ModelFactory::_'. $method .'] not available');
-            } else {
-                return call_user_func_array(array($this, '_'.$method), $args);
-            }
+            return call_user_func_array(array($this, '_'.$method), $args);
         }
     }
 }
