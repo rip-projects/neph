@@ -82,6 +82,8 @@ require Neph::path('sys').'event.php';
 require Neph::path('sys').'loader.php';
 spl_autoload_register(array('Neph\\Core\\Loader', 'load'));
 
+
+// FIXME fix this exception handler for uncaught no module exist error
 set_exception_handler(function($e) {
 	require_once Neph::path('sys').'error.php';
 	Error::exception($e);

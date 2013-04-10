@@ -10,6 +10,7 @@ class Controller {
 		}
 
 		$class = Loader::module($module);
+
 		if (!empty($class)) {
 			$controller = new $class;
 			return $controller;

@@ -62,6 +62,7 @@ class RouterImpl {
 				'params' => &$params,
 				));
 
+
 			if (method_exists($controller, 'execute')) {
 				$response = $controller->execute($request);
 			} else {

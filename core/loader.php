@@ -101,13 +101,14 @@ class Loader {
 
 		if (is_readable($dir = Neph::path('site').Neph::site().'/modules/'.$module)) {
 			static::$module_paths[$module] = $dir;
-			if (is_readable($dir.'/'.$module.'_controller.php')) {
-				require $dir.'/'.$module.'_controller.php';
+			if (is_readable($f = $dir.'/'.$module.'_controller.php')) {
+				require $f;
 				return $module.'_Controller';
 			} else {
 				return '';
 			}
 		}
+
 
 		if (isset(static::$module_namespaces[$module])) {
 			$ns = static::$module_namespaces[$module];
