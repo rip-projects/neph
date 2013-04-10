@@ -2,6 +2,7 @@
 
 use \Neph\Core\Request;
 use \Neph\Core\Lang;
+use \Neph\Core\String;
 
 class FilterError extends \Exception {
     protected $parameters = array();
@@ -48,11 +49,30 @@ class FilterErrors {
             return $this->messages;
         }
     }
+
+    function format() {
+        $messages = $this->all();
+        if (count($messages) > 0) {
+            $result = '<ul class="error-list">';
+            foreach ($messages as $message) {
+                $result .= '<li>'.$message.'</li>';
+            }
+            $result .= '</ul>';
+        } else {
+            $result = '';
+        }
+        return $result;
+    }
+
+    function count() {
+        return count($this->all());
+    }
 }
 
 class Filter {
     static $instance;
     protected $rules = array();
+    protected $aliases = array();
     public $errors;
 
     static function instance($rules = '') {
@@ -62,11 +82,18 @@ class Filter {
     }
 
     function __construct($rules) {
-        foreach ($rules as $key => &$rule) {
-            $rule = (is_string($rule)) ? explode('|', $rule) : $rule;
-        }
+        $new_rules = array();
 
-        $this->rules = $rules;
+        foreach ($rules as $key => $rule) {
+            $alias = explode(':', $key);
+            $key = $alias[0];
+            $this->aliases[$key] = (empty($_alias[1])) ? String::humanize($key) : $_alias[1];
+
+            $rule = (is_string($rule)) ? explode('|', $rule) : $rule;
+
+            $new_rules[$key] = $rule;
+        }
+        $this->rules = $new_rules;
     }
 
     function valid(&$attrs) {
@@ -74,7 +101,7 @@ class Filter {
         foreach ($this->rules as $key => $rules) {
             $this->check($key, $rules, $attrs);
         }
-        return false;
+        return ($this->errors->count() == 0);
     }
 
     function check($key, $rules, &$attrs) {
@@ -102,19 +129,21 @@ class Filter {
 
     function message($key, $rule, $error) {
         $message = Lang::line(array('group' => 'filter', 'key' => $rule, 'default' => ''));
+
         $parameters = array();
 
         if ($error instanceof FilterError) {
             if ($error->getMessage()) {
                 $message = $error->getMessage();
-                $parameters = $error->getParameters();
             }
+            $parameters = $error->getParameters();
         } else {
             if (empty($message)) {
                 $message = $error->getMessage();
             }
         }
-        if (empty($message)) $message = 'Unknown label [filter.'.$rule.'] for column ['.$key.']';
+        if (empty($message)) $message = 'Unknown label [filter.'.$rule.'] for column ['.$key.':'.$this->aliases[$key].']';
+
         return l($message, $parameters);
     }
 
@@ -124,7 +153,7 @@ class Filter {
 
     function filter_required($key, $value) {
         if (empty($value)) {
-            throw FilterError::instance(array($key));
+            throw FilterError::instance(array($this->aliases[$key]));
         }
     }
 
@@ -134,8 +163,7 @@ class Filter {
         // The format for specifying validation rules and parameters follows a
         // {rule}:{parameters} formatting convention. For instance, the rule
         // "max:3" specifies that the value may only be 3 characters long.
-        if (($colon = strpos($rule, ':')) !== false)
-        {
+        if (($colon = strpos($rule, ':')) !== false) {
             $parameters = str_getcsv(substr($rule, $colon + 1));
         }
 

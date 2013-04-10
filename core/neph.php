@@ -1,6 +1,7 @@
 <?php namespace Neph\Core;
 
 use \Neph\Core\Error;
+use \Neph\Core\Event;
 
 // error_reporting(0);
 
@@ -35,6 +36,12 @@ class Neph {
 	}
 
 	static function init() {
+		Event::on('response.send', function() {
+			if (!is_cli() && Config::get('session.default', '') !== '') {
+				Session::save();
+			}
+		});
+
 		Lang::init();
 
 		$start_file = static::path('site').static::site().'/start.php';
@@ -44,10 +51,10 @@ class Neph {
 
 		// Starting the routing activity
 		Response::$default = Router::route();
+		Response::$default->render();
 
-		if (!is_cli() && Config::get('session.default', '') !== '') {
-			Session::save();
-		}
+		Event::emit('response.presend');
+		Event::emit('response.send');
 
 		$success = Response::$default->send();
 
@@ -65,7 +72,7 @@ $cwd = getcwd();
 $def_config = array(
 	'site' => $cwd.'/../sites/',
 	'sys' => $cwd.'/../core/',
-	'data' => $cwd.'/../data/',
+	'storage' => $cwd.'/../storage/',
 	'vendor' => $cwd.'/../vendor/',
 );
 $NEPH_CONFIG = $NEPH_CONFIG + $def_config;

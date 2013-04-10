@@ -11,4 +11,4 @@ use \Neph\Core\Request;
     )) ?>
 </div>
 
-<?php echo $crud->form($entry) ?>
+<?php echo $crud->form($data) ?>

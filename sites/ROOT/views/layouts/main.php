@@ -2,6 +2,7 @@
 use Neph\Core\URL;
 use Neph\Core\Console;
 use Neph\Core\Response;
+use Xinix\Neph\Message\Message;
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -25,6 +26,19 @@ use Neph\Core\Response;
             overflow: hidden;
             border: 1px solid #ccc;
             /*background-position: -360px -144px;*/
+        }
+
+        .error-list {
+            list-style: none;
+            text-align: center;
+        }
+
+        .error-list li {
+            display: inline;
+        }
+
+        .error-list li:after {
+            content: ". ";
         }
 
         @media (min-width: 979px) {
@@ -57,6 +71,8 @@ use Neph\Core\Response;
     </div>
 
     <div class="container" id="body">
+        <?php echo Message::show() ?>
+
 		<?php echo $content ?>
     </div>
 

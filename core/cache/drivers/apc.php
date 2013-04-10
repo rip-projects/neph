@@ -8,8 +8,7 @@ class APC extends Driver {
 	 * @param  string  $key
 	 * @return bool
 	 */
-	public function has($key)
-	{
+	public function has($key) {
 		return ( ! is_null($this->get($key)));
 	}
 
@@ -19,10 +18,8 @@ class APC extends Driver {
 	 * @param  string  $key
 	 * @return mixed
 	 */
-	protected function retrieve($key)
-	{
-		if (($cache = apc_fetch($this->key.$key)) !== false)
-		{
+	protected function retrieve($key) {
+		if (($cache = apc_fetch($this->key.$key)) !== false) {
 			return $cache;
 		}
 	}
@@ -40,8 +37,7 @@ class APC extends Driver {
 	 * @param  int     $minutes
 	 * @return void
 	 */
-	public function put($key, $value, $minutes = 60)
-	{
+	public function put($key, $value, $minutes = 60) {
 		apc_store($this->key.$key, $value, $minutes * 60);
 	}
 
@@ -52,8 +48,7 @@ class APC extends Driver {
 	 * @param  mixed   $value
 	 * @return void
 	 */
-	public function forever($key, $value)
-	{
+	public function forever($key, $value) {
 		return $this->put($key, $value, 0);
 	}
 
@@ -63,8 +58,7 @@ class APC extends Driver {
 	 * @param  string  $key
 	 * @return void
 	 */
-	public function forget($key)
-	{
+	public function forget($key) {
 		apc_delete($this->key.$key);
 	}
 

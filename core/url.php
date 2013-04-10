@@ -1,5 +1,7 @@
 <?php namespace Neph\Core;
 
+use \Neph\Core\Event;
+
 class URL {
 	static function theme($uri) {
 		return static::base().'themes/'.Config::get('config.theme').'/'.$uri;
@@ -18,6 +20,9 @@ class URL {
 	}
 
 	static function redirect($uri) {
+		Event::emit('response.presend');
+		Event::emit('response.send');
+
 		header('Location: '.static::site($uri));
 		exit;
 	}

@@ -84,6 +84,10 @@ class Response {
         return $this->content;
     }
 
+    function rendered() {
+        return $this->content;
+    }
+
     function send_headers() {
         if (!is_cli()) {
             if (empty($this->status) || $this->status != 200) {
@@ -103,6 +107,6 @@ class Response {
 
     function send() {
         $this->send_headers();
-        echo $this->render();
+        echo $this->rendered();
     }
 }

@@ -9,6 +9,7 @@ use \Neph\Core\Session;
 use \Neph\Core\Cookie;
 use \Neph\Core\Request;
 use \Xinix\Neph\Filter\Filter;
+use \Xinix\Neph\Message\Message;
 
 
 class Crud_Controller extends Controller {
@@ -109,7 +110,7 @@ class Crud_Controller extends Controller {
 
 	function get_edit($id) {
 		$data = array();
-		$data['entry'] = $this->model->find($id);
+		$data['data'] = $this->model->find($id);
 		return $data;
 	}
 
@@ -119,6 +120,7 @@ class Crud_Controller extends Controller {
 		if ($this->request->is_rest()) {
 			return true;
 		} else {
+			Message::success('Record deleted.');
 			URL::redirect('/'.$this->name.'/entries');
 		}
 	}
@@ -139,6 +141,7 @@ class Crud_Controller extends Controller {
 		if ($this->request->is_rest()) {
 			URL::redirect('/'.$this->name.'/'.$data['id']);
 		} else {
+			Message::success('Record added.');
 			URL::redirect('/'.$this->name.'/detail/'.$data['id']);
 		}
 	}
@@ -149,30 +152,21 @@ class Crud_Controller extends Controller {
 		unset($entry['id']);
 		$result = $this->model->where('id', '=', $id)->update($entry);
 
-		if ($result) {
-			if ($this->request->is_rest()) {
-				URL::redirect('/'.$this->name.'/'.$id);
-			} else {
-				URL::redirect('/'.$this->name.'/detail/'.$id);
-			}
+		if ($this->request->is_rest()) {
+			URL::redirect('/'.$this->name.'/'.$id);
+		} elseif ($result) {
+			Message::success('Record updated.');
+			URL::redirect('/'.$this->name.'/detail/'.$id);
+		} else {
+			Message::info('No update for same record.');
+			URL::redirect('/'.$this->name.'/edit/'.$id);
 		}
 
 		$data = array(
-			'entry' => $entry,
+			'data' => $entry,
 		);
 
 		return $data;
-	}
-
-	function _filter() {
-		$filters = $this->filter_config();
-		$fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
-		$filter = (isset($filters[$fn])) ? $filters[$fn] : null;
-		if ($filter) {
-			$data = Request::data();
-			return Filter::instance($filter)->valid($data);
-		}
-		return true;
 	}
 
 	function execute($request) {
@@ -186,10 +180,25 @@ class Crud_Controller extends Controller {
 			}
 		}
 
-		if (!$this->_filter()) {
-			\Console::log(Filter::instance()->errors->all());
-			exit;
+		// filter validation
+		$filters = $this->filter_config();
+		$fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
+		$filter = (isset($filters[$fn])) ? $filters[$fn] : null;
+		if ($filter) {
+
+			$data = Request::data();
+			$filter_o = Filter::instance($filter);
+			$pass = $filter_o->valid($data);
+			Request::set_data($data);
+
+			if (!$pass) {
+				Message::error($filter_o->errors->format());
+				return array(
+					'data' => $data,
+				);
+			}
 		}
+
 		return parent::execute($request);
 	}
 }

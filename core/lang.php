@@ -25,7 +25,7 @@ class Lang {
         if (!isset($this->cache[$this->key][$file])) {
             $this->cache[$this->key][$file] = array();
             foreach ($this->paths as $path) {
-                if (is_readable($f = $path.$this->key.'/messages.php')) {
+                if (is_readable($f = $path.$this->key.'/'.$file.'.php')) {
                     $result = include($f);
                     if (!empty($result) && is_array($result)) {
                         $this->cache[$this->key][$file] = array_merge_recursive_distinct($this->cache[$this->key][$file], $result);

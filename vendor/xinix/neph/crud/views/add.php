@@ -11,4 +11,4 @@ use \Neph\Core\Request;
     )) ?>
 </div>
 
-<?php echo $crud->form() ?>
+<?php echo $crud->form((isset($data)) ? $data : array()) ?>
