@@ -10,4 +10,6 @@ return array(
     'encoding' => 'utf8',
 
     'key' => 'password',
+
+    'language' => 'en',
 );

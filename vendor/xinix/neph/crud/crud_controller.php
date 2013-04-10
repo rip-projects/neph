@@ -8,22 +8,26 @@ use \Neph\Core\Controller;
 use \Neph\Core\Session;
 use \Neph\Core\Cookie;
 use \Neph\Core\Request;
+use \Xinix\Neph\Filter\Filter;
 
 
 class Crud_Controller extends Controller {
 	var $name;
 	var $crud;
+	var $model;
+	var $filters = array();
 
 	function __construct() {
 		if (empty($this->name)) {
 			$name = explode('_', class_basename($this));
 			$this->name = strtolower($name[0]);
-			if ($this->name == 'crud') {
+			if ($this->name === 'crud') {
 				$this->name = Request::instance()->uri->segments[1];
 			}
 		}
 
 		if (DB::check($this->name)) {
+			$this->model = Model::factory($this->name);
 			$this->crud = $crud = new Crud($this->crud_config());
 
 			Event::on('router.post_execute', function($data) use ($crud) {
@@ -34,14 +38,23 @@ class Crud_Controller extends Controller {
 		}
 	}
 
+	function filter_config() {
+		return $this->filters;
+	}
+
 	function crud_config() {
 		static $config;
 
 		if (!$config) {
-			$meta_columns = DB::columns($this->name);
+			$meta_columns = $this->model->columns();
 			$config = array(
+				'name' => $this->name,
 				'columns' => array_keys($meta_columns),
 				'meta_columns' => $meta_columns,
+				'actions' => array(
+					'edit' => '/'.$this->name.'/edit',
+					'delete' => '/'.$this->name.'/delete',
+				),
 			);
 		}
 		return $config;
@@ -69,33 +82,50 @@ class Crud_Controller extends Controller {
 
 		switch ($method) {
 			case 'GET':
-				if ($id) {
-					return $this->_invoke($method, 'detail', array($id));
-				} else {
-					return $this->_invoke($method, 'entries');
-				}
+				$fn = ($id) ? 'detail' : 'entries';
 				break;
 			case 'POST':
 			case 'PUT':
 				$method = 'POST';
-				if ($id) {
-					return $this->_invoke($method, 'edit', array($id));
-				} else {
-					return $this->_invoke($method, 'add');
-				}
+				$fn = ($id) ? 'edit' : 'add';
 				break;
+			case 'DELETE':
+				$method = 'POST';
+				$fn = 'delete';
+				break;
+		}
+
+		if (isset($fn)) {
+			// FIXME run filter for matching fn
+			return $this->_invoke($method, $fn, array($id));
 		}
 	}
 
 	function get_detail($id) {
 		$data = array();
-		$data['publish'] = DB::table($this->name)->find($id);
+		$data['publish'] = $this->model->find($id);
 		return $data;
+	}
+
+	function get_edit($id) {
+		$data = array();
+		$data['entry'] = $this->model->find($id);
+		return $data;
+	}
+
+	function get_delete($id) {
+		$result = $this->model->delete($id);
+
+		if ($this->request->is_rest()) {
+			return true;
+		} else {
+			URL::redirect('/'.$this->name.'/entries');
+		}
 	}
 
 	function get_entries() {
 		$data = array();
-		$data['publish']['entries'] = DB::table($this->name)->get();
+		$data['publish']['entries'] = $this->model->all();
 		return $data;
 	}
 
@@ -104,30 +134,51 @@ class Crud_Controller extends Controller {
 		foreach ($data as $key => &$value) {
 			if (empty($value)) unset($data[$key]);
 		}
-		$id = DB::table($this->name)->insert_get_id($data);
-		URL::redirect('/'.$this->name.'/'.$id);
-		// $data = array(
-		// 	'publish' => DB::table($this->name)->find($id),
-		// );
-		// return $data;
+		$data = $this->model->create($data)->to_array();
+
+		if ($this->request->is_rest()) {
+			URL::redirect('/'.$this->name.'/'.$data['id']);
+		} else {
+			URL::redirect('/'.$this->name.'/detail/'.$data['id']);
+		}
 	}
 
 
 	function post_edit($id) {
-		$data = $this->request->data();
-		unset($data['id']);
-		DB::table($this->name)->where('id', '=', $id)->update($data);
+		$entry = $this->request->data();
+		unset($entry['id']);
+		$result = $this->model->where('id', '=', $id)->update($entry);
+
+		if ($result) {
+			if ($this->request->is_rest()) {
+				URL::redirect('/'.$this->name.'/'.$id);
+			} else {
+				URL::redirect('/'.$this->name.'/detail/'.$id);
+			}
+		}
+
 		$data = array(
-			'publish' => DB::table($this->name)->find($id),
+			'entry' => $entry,
 		);
+
 		return $data;
+	}
+
+	function _filter() {
+		$filters = $this->filter_config();
+		$fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
+		$filter = (isset($filters[$fn])) ? $filters[$fn] : null;
+		if ($filter) {
+			$data = Request::data();
+			return Filter::instance($filter)->valid($data);
+		}
+		return true;
 	}
 
 	function execute($request) {
 		$this->request = $request;
 
 		if ($request->is_rest()) {
-
 			if (is_numeric($request->uri->segments[2])) {
 				return $this->action_index(intval($request->uri->segments[2]));
 			} else {
@@ -135,6 +186,10 @@ class Crud_Controller extends Controller {
 			}
 		}
 
+		if (!$this->_filter()) {
+			\Console::log(Filter::instance()->errors->all());
+			exit;
+		}
 		return parent::execute($request);
 	}
 }

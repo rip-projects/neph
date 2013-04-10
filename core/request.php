@@ -19,7 +19,10 @@ class Request {
 
 class RequestImpl {
 	var $uri;
-	var $accept = '';
+	protected $accept = '';
+	protected $location = array();
+
+	private $data;
 
 	function __construct() {
 		if (is_cli()) {
@@ -65,20 +68,51 @@ class RequestImpl {
 				$exploded = explode(';', $value);
 				$value = array(
 					'mime' => trim($exploded[0]),
-					'priority' => (empty($exploded[1]) ? 1 : doubleval($exploded[1])),
+					'priority' => (empty($exploded[1]) ? 1 : doubleval(substr($exploded[1], 2))),
 				);
 			}
+
+			usort($accepting, function ($a, $b) {
+			    return $a['priority'] <= $b['priority'];
+			});
 			$this->accept = $accepting;
 		}
 		return $this->accept;
 	}
 
-	function data() {
-		switch ($_SERVER['CONTENT_TYPE']) {
-			case 'application/json':
-				return json_decode(file_get_contents('php://input'), true);
-			default:
-				return $_POST;
+	function language() {
+		if (empty($this->language)) {
+			$accepting = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+			foreach ($accepting as &$value) {
+				$exploded = explode(';', $value);
+				$lang = explode('-', trim($exploded[0]));
+				$value = array(
+					'lang' => $lang[0],
+					'country' => (isset($lang[1])) ? $lang[1] : '',
+					'priority' => (empty($exploded[1]) ? 1 : doubleval(substr($exploded[1], 2))),
+				);
+			}
+			usort($accepting, function ($a, $b) {
+			    return $a['priority'] <= $b['priority'];
+			});
+			$this->language = $accepting;
 		}
+		return $this->language;
+	}
+
+	function data() {
+		if (!isset($this->data)) {
+			switch ($_SERVER['CONTENT_TYPE']) {
+				case 'application/json':
+					$this->data = json_decode(file_get_contents('php://input'), true);
+				default:
+					$this->data = $_POST;
+			}
+		}
+		return $this->data;
+	}
+
+	function set_data($data) {
+		$this->data = $data;
 	}
 }

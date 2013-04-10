@@ -18,6 +18,7 @@ class Console {
 		}
 		foreach($data as $k => $row) {
 			echo $severity.' '.$d.' ('.$k.') ';
+			// echo print_r($backtrace,1);
 			// echo $backtrace[1]['file'].':'.$backtrace[1]['line']."\n";
 			echo print_r($row, 1);
 			echo "\n";

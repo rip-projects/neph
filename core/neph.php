@@ -35,6 +35,8 @@ class Neph {
 	}
 
 	static function init() {
+		Lang::init();
+
 		$start_file = static::path('site').static::site().'/start.php';
 		if (is_readable($start_file)) {
 			include $start_file;

@@ -3,21 +3,23 @@
 class Config {
 	static public $instance;
 
+	var $paths = array();
+	var $cache = array();
+
 	static function instance() {
-		if (empty(static::$instanc)) {
-			static::$instance = new ConfigImpl();
+		if (!isset(static::$instance)) {
+			static::$instance = new static();
 		}
 		return static::$instance;
+	}
+
+	function __call($method, $parameters) {
+		return call_user_func_array(array($this, '_'.$method), $parameters);
 	}
 
 	static function __callStatic($method, $parameters) {
 		return call_user_func_array(array(static::instance(), $method), $parameters);
 	}
-}
-
-class ConfigImpl {
-	var $paths = array();
-	var $cache = array();
 
 	function __construct() {
 		$this->path(Neph::path('sys').'config/');
@@ -46,40 +48,38 @@ class ConfigImpl {
 		}
 	}
 
-	function path($path) {
-		array_unshift($this->paths, $path);
+	function _path($path) {
+		$this->paths[$path] = $path;
 	}
 
-	function set($key, $value) {
+	function _set($key, $value) {
 		array_set($this->cache, $key, $value);
 	}
 
-	function get($key, $def = '') {
-		$segments = explode('.', $key);
+	function _get($key, $def = '') {
 
 		$result = array_get($this->cache, $key);
+		if (isset($result)) return $result;
 
-		if (!isset($result)) {
+		$segments = explode('.', $key);
+		if (!isset($this->cache[$segments[0]])) {
+			$this->cache[$segments[0]] = array();
 
 			$config = array();
 			foreach($this->paths as $path) {
-				if (is_readable($path.$segments[0].'.php')) {
-					$c = include($path.$segments[0].'.php');
+				if (is_readable($f = $path.$segments[0].'.php')) {
+					$c = include($f);
 					if (is_array($c)) {
-						$config = $config + $c;
+						$config = array_merge_recursive_distinct($config, $c);
 					}
 				}
 			}
 
 			if (!empty($config)) {
-				$this->cache[$segments[0]] = $config;
+				$this->cache[$segments[0]] = array_merge_recursive_distinct($this->cache[$segments[0]], $config);
 			}
-
-			$result = array_get($this->cache, $key);
 		}
 
-		if (!isset($result)) $result = $def;
-
-		return $result;
+		return array_get($this->cache, $key, $def);
 	}
-};
+}

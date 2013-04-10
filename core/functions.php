@@ -49,7 +49,7 @@ function class_basename($class)
 }
 
 function l($message, $args = '') {
-    return $message;
+    return \Neph\Core\Lang::line(array('group' => 'messages', 'key' => $message, 'default' => $message), $args);
 }
 
 function value($value) {
@@ -142,4 +142,23 @@ function array_forget(&$array, $key)
     }
 
     unset($array[array_shift($keys)]);
+}
+
+function array_merge_recursive_distinct ( array &$array1, array &$array2 )
+{
+  $merged = $array1;
+
+  foreach ( $array2 as $key => &$value )
+  {
+    if ( is_array ( $value ) && isset ( $merged [$key] ) && is_array ( $merged [$key] ) )
+    {
+      $merged [$key] = array_merge_recursive_distinct ( $merged [$key], $value );
+    }
+    else
+    {
+      $merged [$key] = $value;
+    }
+  }
+
+  return $merged;
 }

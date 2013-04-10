@@ -1,1 +1,1 @@
-home
+<h1>Welcome to CMS</h1>

@@ -1,5 +1,7 @@
 <?php
 
+use \Neph\Core\DB;
+
 \Neph\Core\Loader::$aliases = array(
     'Controller' => '\\Neph\\Core\\Controller',
     'Router' => '\\Neph\\Core\\Router',
@@ -10,8 +12,8 @@
     'Model' => '\\Neph\\Core\\DB\\ORM\\Model',
 );
 
-
 Controller::register('user');
+Controller::register('module');
 
 if ( !is_cli() and Config::get('session.default', '') !== '') {
     Session::load();

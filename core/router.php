@@ -58,6 +58,7 @@ class RouterImpl {
 			$params = array_slice($request->uri->segments, 3);
 
 			Event::emit('router.pre_execute', array(
+				'segments' => $request->uri->segments,
 				'params' => &$params,
 				));
 

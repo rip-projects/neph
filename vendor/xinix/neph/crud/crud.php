@@ -10,6 +10,7 @@ class Crud {
 	var $meta_columns = array();
 	var $show_checkbox = true;
 	var $excluded_columns = array('id', 'position', 'status', 'created_by', 'created_time', 'updated_by', 'updated_time');
+	var $actions = array();
 
 	function __construct($config = '') {
 		foreach($config as $k => $v) {
@@ -26,23 +27,32 @@ class Crud {
 			));
 	}
 
-	function form() {
+	function form($entry = array()) {
 		return View::instance('file://'.__DIR__.'/views/crud/form.php')->render(array(
 			'self' => $this,
+			'entry' => (array) $entry,
 			));
 	}
 
-	function input($column, $attrs = array()) {
+	function detail($data) {
+		return View::instance('file://'.__DIR__.'/views/crud/detail.php')->render(array(
+			'self' => $this,
+			'data' => $data,
+			));
+	}
+
+	function input($column, $value, $attrs = array()) {
 		$meta_column = $this->meta_columns[$column];
 		if ($column == 'password') {
-			return '<input type="password" name="'.$column.'" class="'.$attrs['class'].'" />';
+			return '<input type="password" name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'" />';
 		}
 		switch($meta_column['type']) {
 		    case 'int':
-		        return '<input type="text" name="'.$column.'" class="'.$attrs['class'].'" />';
+		        return '<input type="text" name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'" />';
 		    case 'varchar':
+		        return '<input type="text" name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'" />';
 		    case 'text':
-		        return '<input type="text" name="'.$column.'" class="'.$attrs['class'].'" />';
+		    	return '<textarea name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'"></textarea>';
 		}
 	}
 

@@ -2,13 +2,14 @@
 use \Neph\Core\String;
 use \Neph\Core\URL;
 use \Neph\Core\Console;
+use \Neph\Core\Request;
 use \Xinix\Neph\Grid\Grid;
 ?>
 
 <div class="row-fluid">
     <div class="span6">
         <?php echo $crud->breadcrumb(array(
-            'User' => '/user',
+            String::humanize(Request::instance()->uri->segments[1]) => '/'.Request::instance()->uri->segments[1],
         )) ?>
     </div>
     <div class="span6">

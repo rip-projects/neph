@@ -1,10 +1,10 @@
 <?php namespace Neph\Core;
 
 class Event {
-	
+
 	static $events = array();
 
-	static function emit($event, $data) {
+	static function emit($event, $data = array()) {
 		$results = array();
 		if (!empty(static::$events[$event])) {
 			foreach (static::$events[$event] as $fn) {
@@ -16,7 +16,7 @@ class Event {
 		return $results;
 	}
 
-	static function until($event, $data) {
+	static function until($event, $data = array()) {
 		if (!empty(static::$events[$event])) {
 			foreach (static::$events[$event] as $fn) {
 				if (is_callable($fn)) {

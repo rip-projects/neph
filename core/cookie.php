@@ -42,13 +42,18 @@ class Cookie {
      * @return string
      */
     public static function get($name, $default = null) {
-        if (isset(static::$jar[$name])) return static::parse(static::$jar[$name]['value']);
-
-        if (!is_null($value = Request::cookie($name))) {
-            return static::parse($value);
-        }
+        $d = static::raw_get($name, $default);
+        if (isset($d)) return static::parse($d);
 
         return value($default);
+    }
+
+    public static function raw_get($name, $default = null) {
+        if (isset(static::$jar[$name])) return static::$jar[$name]['value'];
+
+        if (!is_null($value = Request::cookie($name))) {
+            return $value;
+        }
     }
 
     /**
@@ -71,6 +76,11 @@ class Cookie {
      * @return void
      */
     public static function put($name, $value, $expiration = 0, $path = '/', $domain = null, $secure = false) {
+        $value = static::hash($value).'+'.$value;
+        static::raw_put($name, $value, $expiration, $path, $domain, $secure);
+    }
+
+    public static function raw_put($name, $value, $expiration = 0, $path = '/', $domain = null, $secure = false) {
         if ($expiration !== 0) {
             $expiration = time() + $expiration;
         }
@@ -78,8 +88,6 @@ class Cookie {
         if ($domain === 'localhost') {
             $domain = false;
         }
-
-        $value = static::hash($value).'+'.$value;
 
         // If the secure option is set to true, yet the request is not over HTTPS
         // we'll throw an exception to let the developer know that they are

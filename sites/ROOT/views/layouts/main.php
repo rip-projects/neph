@@ -20,6 +20,13 @@ use Neph\Core\Response;
             height: inherit;
         }
 
+        .grid-action {
+            text-indent: 10000px;
+            overflow: hidden;
+            border: 1px solid #ccc;
+            /*background-position: -360px -144px;*/
+        }
+
         @media (min-width: 979px) {
     	   body { padding-top: 41px; }
         }
@@ -38,10 +45,11 @@ use Neph\Core\Response;
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="<?php echo URL::site() ?>">NEPH</a>
+				<a class="brand" href="<?php echo URL::site() ?>">/</a>
 				<div class="nav-collapse collapse">
 					<ul class="nav">
-						<li class=""><a href="<?php echo URL::site('/user') ?>">User</a></li>
+						<li><a href="<?php echo URL::site('/user') ?>">User</a></li>
+                        <li><a href="<?php echo URL::site('/module') ?>">Module</a></li>
 					</ul>
 				</div>
 			</div>
