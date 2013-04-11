@@ -10,7 +10,7 @@ class Message {
     static $session_id = 'message_messages';
 
     protected $dirty = false;
-    protected $messages = array(
+    public $messages = array(
         'error' => array(),
         'success' => array(),
         'info' => array(),
