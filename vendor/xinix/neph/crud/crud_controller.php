@@ -151,7 +151,6 @@ class Crud_Controller extends Controller {
 		$entry = $this->request->data();
 		unset($entry['id']);
 		$result = $this->model->where('id', '=', $id)->update($entry);
-
 		if ($this->request->is_rest()) {
 			URL::redirect('/'.$this->name.'/'.$id);
 		} elseif ($result) {

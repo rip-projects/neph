@@ -12,20 +12,13 @@ class Controller {
 		$class = Loader::module($module);
 
 		if (!empty($class)) {
-			$controller = new $class;
-			return $controller;
+			return new $class;
 		} else {
 			$class = Config::get('config.default_view');
 			if (empty($class)) {
-				if (DB::check($module)) {
-					return new \Xinix\Neph\Crud\Crud_Controller();
-				} else {
-					return new \Neph\Core\Controller();
-				}
-			} else {
-				$controller = new $class;
-				return $controller;
+				return (DB::check($module)) ? new \Xinix\Neph\Crud\Crud_Controller() : new \Neph\Core\Controller();
 			}
+			return new $class;
 		}
 	}
 

@@ -52,7 +52,11 @@ class RouterImpl {
 			return $this->route(Request::instance());
 		}
 
-		$controller = Controller::load($request->uri->segments[1]);
+		try {
+			$controller = Controller::load($request->uri->segments[1]);
+		} catch(\Exception $e) {
+			$controller = null;
+		}
 
 		if ($controller) {
 			$params = array_slice($request->uri->segments, 3);

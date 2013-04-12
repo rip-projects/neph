@@ -120,13 +120,14 @@ class Loader {
 					static::$module_paths[$module] = $directory.$dir;
 					if (is_readable($directory.$dir.'/'. $module.'_controller.php')) {
 						return $ns.'\\'.$module.'_Controller';
-					} else {
-						return '';
 					}
 				}
 			}
 		}
 
+		if (DB::check($module)) return '';
+
+		// \Console::error('No module ['.$module.'] available!');
 		throw new \Exception('No module ['.$module.'] available!');
 	}
 

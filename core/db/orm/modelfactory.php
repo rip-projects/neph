@@ -42,7 +42,11 @@ class ModelFactory {
         if ($this->model) {
             return call_user_func_array(array($this->model, $method), $args);
         } else {
-            return call_user_func_array(array($this, '_'.$method), $args);
+            if (method_exists($this, '_'.$method)) {
+                return call_user_func_array(array($this, '_'.$method), $args);
+            } else {
+                return call_user_func_array(array($this->query(), $method), $args);
+            }
         }
     }
 }
