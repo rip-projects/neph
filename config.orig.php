@@ -2,7 +2,7 @@
 
 return array(
 	'sites' => array(
-        'expensedia_backend' => 'expensedia',
+        // 'foo' => 'foo',
 		// '^http://localhost/bar' => 'bar'
 	),
 );
