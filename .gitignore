@@ -1,1 +1,3 @@
 storage/logs/*.log
+/config.php
+/sites/ROOT

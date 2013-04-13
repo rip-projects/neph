@@ -53,7 +53,7 @@ class Neph {
 		Response::$default = Router::route();
 		Response::$default->render();
 
-		Event::emit('response.presend');
+		Event::emit('response.pre_send');
 		Event::emit('response.send');
 
 		$success = Response::$default->send();

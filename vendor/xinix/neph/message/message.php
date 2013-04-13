@@ -50,7 +50,7 @@ class Message {
 
         $m = $this;
         $sess_id = static::$session_id;
-        Event::on('response.presend', function() use ($m, $sess_id) {
+        Event::on('response.pre_send', function() use ($m, $sess_id) {
             Session::flash($sess_id, $m->messages);
         });
     }

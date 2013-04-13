@@ -83,7 +83,7 @@ class Crud_Controller extends Controller {
 
 		switch ($method) {
 			case 'GET':
-				$fn = ($id) ? 'detail' : 'entries';
+				$fn = ($id) ? 'entry' : 'entries';
 				break;
 			case 'POST':
 			case 'PUT':
@@ -102,7 +102,7 @@ class Crud_Controller extends Controller {
 		}
 	}
 
-	function get_detail($id) {
+	function get_entry($id) {
 		$data = array();
 		$data['publish'] = $this->model->find($id);
 		return $data;
@@ -115,7 +115,13 @@ class Crud_Controller extends Controller {
 	}
 
 	function get_delete($id) {
-		$result = $this->model->delete($id);
+		$ids = explode(',', $id);
+		foreach ($ids as $id) {
+			$id = trim($id);
+			if (empty($id)) continue;
+
+			$this->model->delete($id);
+		}
 
 		if ($this->request->is_rest()) {
 			return true;
@@ -132,18 +138,28 @@ class Crud_Controller extends Controller {
 	}
 
 	function post_add() {
+		Event::on('crud_controller.post_add', function($d) {
+			extract($d);
+
+			if (Request::instance()->is_rest()) {
+				URL::redirect('/'.$controller->name.'/'.$data['id']);
+			} else {
+				Message::success('Record added.');
+
+				URL::redirect('/'.$controller->name.'/entry/'.$data['id']);
+			}
+		});
+
 		$data = $this->request->data();
 		foreach ($data as $key => &$value) {
 			if (empty($value)) unset($data[$key]);
 		}
 		$data = $this->model->create($data)->to_array();
 
-		if ($this->request->is_rest()) {
-			URL::redirect('/'.$this->name.'/'.$data['id']);
-		} else {
-			Message::success('Record added.');
-			URL::redirect('/'.$this->name.'/detail/'.$data['id']);
-		}
+		Event::emit('crud_controller.post_add', array(
+			'data' => $data,
+			'controller' => $this,
+		));
 	}
 
 
@@ -155,7 +171,7 @@ class Crud_Controller extends Controller {
 			URL::redirect('/'.$this->name.'/'.$id);
 		} elseif ($result) {
 			Message::success('Record updated.');
-			URL::redirect('/'.$this->name.'/detail/'.$id);
+			URL::redirect('/'.$this->name.'/entry/'.$id);
 		} else {
 			Message::info('No update for same record.');
 			URL::redirect('/'.$this->name.'/edit/'.$id);

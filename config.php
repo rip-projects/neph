@@ -2,7 +2,7 @@
 
 return array(
 	'sites' => array(
-        'cmneph' => 'cmneph',
+        'neph_test' => 'neph_test',
 		// '^http://localhost/two' => 'two'
 	),
 );

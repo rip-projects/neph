@@ -3,7 +3,7 @@ use \Neph\Core\URL;
 use \Neph\Core\String;
 ?>
 <!-- <form> -->
-	<table class="table table-bordered table-striped" id="<?php echo $self->id ?>">
+	<table class="table table-bordered table-striped grid" id="<?php echo $self->id ?>">
 		<thead>
 			<tr>
 				<?php if ($self->show_checkbox): ?>
@@ -31,9 +31,9 @@ use \Neph\Core\String;
 		<tbody>
 			<?php if (!empty($entries)): ?>
 				<?php foreach($entries as $entry): ?>
-					<tr>
+					<tr class="grid-row">
 						<?php if ($self->show_checkbox): ?>
-		                	<td><input type="checkbox" name="row[<?php echo $entry->id ?>]" value="<?php echo $entry->id ?>" /></td>
+		                	<td class="grid-row-checkbox"><input type="checkbox" name="row[<?php echo $entry->id ?>]" value="<?php echo $entry->id ?>" /></td>
 		                <?php endif ?>
 						<?php foreach($self->columns as $column): ?>
 							<?php if (!in_array($column, $self->excluded_columns)): ?>
@@ -42,7 +42,7 @@ use \Neph\Core\String;
 						<?php endforeach ?>
 						<td>
 							<?php foreach($self->actions as $key => $action): ?>
-							<a class="grid-action icon icon-<?php echo $key ?>" href="<?php echo URL::site($action.'/'.$entry->id) ?>" title="<?php echo l(String::humanize($key)) ?>"><?php echo l(String::humanize($key)) ?></a>
+							<a class="grid-row-action icon icon-<?php echo $key ?>" href="<?php echo URL::site($action.'/'.$entry->id) ?>" title="<?php echo l(String::humanize($key)) ?>"><?php echo l(String::humanize($key)) ?></a>
 							<?php endforeach ?>
 						</td>
 					</tr>

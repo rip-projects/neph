@@ -20,7 +20,7 @@ class URL {
 	}
 
 	static function redirect($uri) {
-		Event::emit('response.presend');
+		Event::emit('response.pre_send');
 		Event::emit('response.send');
 
 		header('Location: '.static::site($uri));

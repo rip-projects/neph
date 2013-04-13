@@ -7,8 +7,8 @@ use \Neph\Core\Request;
 <div class="row-fluid">
     <?php echo $crud->breadcrumb(array(
         String::humanize(Request::instance()->uri->segments[1]) => '/'.Request::instance()->uri->segments[1],
-        'Detail' => Request::instance()->uri->pathinfo,
+        'Entry' => Request::instance()->uri->pathinfo,
     )) ?>
 </div>
 
-<?php echo $crud->detail($publish) ?>
+<?php echo $crud->entry($publish) ?>

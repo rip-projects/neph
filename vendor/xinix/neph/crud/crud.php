@@ -17,7 +17,7 @@ class Crud {
 			$this->$k = $v;
 		}
 
-		$this->id = uniqid('grid-');
+		$this->id = uniqid('crud-');
 	}
 
 	function grid($entries) {
@@ -34,8 +34,8 @@ class Crud {
 			));
 	}
 
-	function detail($data) {
-		return View::instance('file://'.__DIR__.'/views/crud/detail.php')->render(array(
+	function entry($data) {
+		return View::instance('file://'.__DIR__.'/views/crud/entry.php')->render(array(
 			'self' => $this,
 			'data' => $data,
 			));
@@ -52,7 +52,7 @@ class Crud {
 		    case 'varchar':
 		        return '<input type="text" name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'" />';
 		    case 'text':
-		    	return '<textarea name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'"></textarea>';
+		    	return '<textarea name="'.$column.'" class="'.$attrs['class'].'">'.$value.'</textarea>';
 		}
 	}
 
