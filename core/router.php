@@ -52,10 +52,13 @@ class RouterImpl {
 			return $this->route(Request::instance());
 		}
 
+
 		try {
 			$controller = Controller::load($request->uri->segments[1]);
-		} catch(\Exception $e) {
+		} catch(\Neph\Core\LoaderException $e) {
 			$controller = null;
+		} catch(\Exception $e) {
+			return Response::error(500, $e->getMessage(), array('exception' => $e));
 		}
 
 		if ($controller) {

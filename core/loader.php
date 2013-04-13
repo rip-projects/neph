@@ -1,5 +1,9 @@
 <?php namespace Neph\Core;
 
+class LoaderException extends \Exception {
+
+}
+
 class Loader {
 
 	static public $aliases = array();
@@ -128,7 +132,7 @@ class Loader {
 		if (DB::check($module)) return '';
 
 		// \Console::error('No module ['.$module.'] available!');
-		throw new \Exception('No module ['.$module.'] available!');
+		throw new LoaderException('No module ['.$module.'] available!');
 	}
 
 	public static function model($module) {
