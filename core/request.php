@@ -33,7 +33,7 @@ class RequestImpl {
 			$uri[0] = '';
 			$uri = implode('/', $uri);
 		} else {
-			$uri = (isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '/';
+			$uri = (!empty($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '/';
 		}
 		$this->uri = new URI($uri);
 	}
