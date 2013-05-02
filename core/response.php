@@ -1,5 +1,7 @@
 <?php namespace Neph\Core;
 
+use \Neph\Core\URL;
+
 class Response {
     static public $instance;
 
@@ -60,10 +62,18 @@ class Response {
         return new \Neph\Core\Response\Error($status, $message, $data);
     }
 
+    static function redirect($uri) {
+        return new \Neph\Core\Response\Redirect(URL::site($uri));
+        // Event::emit('response.pre_send');
+        // Event::emit('response.send');
+        // echo('Location: '.URL::site($uri));
+        // exit;
+    }
+
     static function instance($response) {
         $event_response = Event::until('response.instance', array(
             'response' => $response
-            ));
+        ));
 
         if ($event_response instanceof Response) {
             return $event_response;
@@ -87,6 +97,7 @@ class Response {
             $this->data = (array) $data;
         }
         $this->uri = Request::instance()->uri;
+        $this->view = Request::$route->view;
         $this->layout = Config::get('config.layout');
     }
 
@@ -100,19 +111,15 @@ class Response {
 
         Event::emit('response.pre_render', array(
             'response' => $this
-            ));
-
-        if (empty($this->view)) {
-            $this->view = '/'. (isset($this->uri->segments[2]) ? $this->uri->segments[2] : 'index');
-        }
+        ));
 
         $this->pre_data = ob_get_clean().$this->pre_data;
 
         $this->content = Event::until('response.render', array(
             'response' => &$this,
-            ));
+        ));
 
-        if (Controller::get_resource_file('/views'.$this->view.'.php')) {
+        if ($this->view) {
             $view = View::instance($this->view)
                 ->prepend($this->pre_data)
                 ->append($this->post_data);

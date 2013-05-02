@@ -47,17 +47,15 @@ class Collection {
         return $this->table;
     }
 
-    function find($id, $columns = array('*')) {
-        $result = $this->table(true)->where($this->proto->key(), '=', $id)->take(1)->get($columns);
-        $this->table = null;
-        $result = $this->hydrate($result);
+    function find($id, $columns = array('*'), $show_all = false) {
+        $this->table(true)->where($this->proto->key(), '=', $id)->take(1);
+        $result = $this->get($columns, $show_all);
         if (!empty($result)) return $result[0];
     }
 
-    function all($columns = array('*')) {
-        $result = $this->table(true)->get($columns);
-        $this->table = null;
-        return $this->hydrate($result);
+    function all($columns = array('*'), $show_all = false) {
+        $this->table(true);
+        return $this->get($columns, $show_all);
     }
 
     function get($columns = array('*'), $show_all = false) {
@@ -70,10 +68,9 @@ class Collection {
         return $this->hydrate($result);
     }
 
-    function root($columns = array('*')) {
-        $result = $this->table()->where($this->proto->key('parent'), '=', 0)->get($columns);
-        $this->table = null;
-        return $this->hydrate($result);
+    function root($columns = array('*'), $show_all = false) {
+        $this->table()->where($this->proto->key('parent'), '=', 0);
+        return $this->get($columns, $show_all);
     }
 
     function prototype($attributes = '', $options = array()) {

@@ -1,7 +1,8 @@
 <?php namespace Xinix\Neph\Crud;
 
-use \Neph\Core\URL;
+use \Neph\Core\Response;
 use \Neph\Core\IoC;
+use \Neph\Core\Router\Route;
 use \Neph\Core\DB;
 use \Neph\Core\DB\ORM\Model;
 use \Neph\Core\Event;
@@ -32,6 +33,8 @@ class Crud_Controller extends Controller {
     protected $filters = array();
 
     public function __construct() {
+        parent::__construct();
+
         if (empty($this->name)) {
             $name = explode('_', class_basename($this));
             $this->name = strtolower($name[0]);
@@ -43,6 +46,38 @@ class Crud_Controller extends Controller {
         if (DB::check($this->name)) {
             $this->collection = IoC::resolve('orm.manager')->collection($this->name);
         }
+
+        $self = $this;
+
+        Event::on('route.pre_call', function() use ($self) {
+            if (Request::instance()->is_rest()) {
+                if (is_numeric(Request::instance()->uri->segments[2])) {
+                    return $self->any_index(intval(Request::instance()->uri->segments[2]));
+                } else {
+                    return $self->any_index();
+                }
+            }
+
+            // filter validation
+            $filters = $self->filter_config();
+            if (!empty($filters)) {
+                $fn = strtolower(Request::instance()->method()).'_'.Request::instance()->uri->segments[2];
+                $filter = (isset($filters[$fn])) ? $filters[$fn] : null;
+                if ($filter) {
+                    $data = Request::data();
+                    $filter_o = Filter::instance($filter);
+                    $pass = $filter_o->valid($data);
+                    Request::set_data($data);
+
+                    if (!$pass) {
+                        Message::error($filter_o->errors->format());
+                        return array(
+                            'data' => $data,
+                        );
+                    }
+                }
+            }
+        });
     }
 
     protected function filter_config() {
@@ -80,12 +115,12 @@ class Crud_Controller extends Controller {
         return $this->form_config;
     }
 
-    public function action_index($id = 0) {
-        if (!$this->request->is_rest()) {
-            URL::redirect('/'.$this->name.'/entries');
+    public function any_index($id = 0) {
+        if (!Request::instance()->is_rest()) {
+            return Response::redirect('/'.$this->name.'/entries');
         }
 
-        $method = $this->request->method();
+        $method = Request::instance()->method();
 
         switch ($method) {
             case 'GET':
@@ -146,11 +181,11 @@ class Crud_Controller extends Controller {
             }
         }
 
-        if ($this->request->is_rest()) {
+        if (Request::instance()->is_rest()) {
             return true;
         } else {
             Message::success('Record deleted.');
-            URL::redirect('/'.$this->name.'/entries');
+            return Response::redirect('/'.$this->name.'/entries');
         }
     }
 
@@ -158,7 +193,7 @@ class Crud_Controller extends Controller {
         $data = array();
 
         $config = $this->grid_config();
-        if (!$this->request->is_rest() && !empty($config['show_tree'])) {
+        if (!Request::instance()->is_rest() && !empty($config['show_tree'])) {
             $data['publish']['entries'] = $this->collection->root();
         } else {
             $results = $this->collection->filter_query($_GET)->get();
@@ -174,43 +209,22 @@ class Crud_Controller extends Controller {
     }
 
     public function post_add() {
-        Event::on('crud_controller.post_add', function($d) {
-            extract($d);
 
-            $data = $data->to_array();
-
-            if (Request::instance()->is_rest()) {
-                URL::redirect('/'.$controller->name.'/'.$data['id']);
-            } else {
-                URL::redirect('/'.$controller->name.'/entry/'.$data['id']);
-            }
-        });
-
-        $entry = $this->collection->prototype($this->request->data());
+        $entry = $this->collection->prototype(Request::instance()->data());
         $entry->save();
 
         Message::success('Record added.');
 
-        Event::emit('crud_controller.post_add', array(
-            'data' => $entry,
-            'controller' => $this,
-        ));
+        if (Request::instance()->is_rest()) {
+            return Response::redirect('/'.$this->name.'/'.$entry->get('id'));
+        } else {
+            return Response::redirect('/'.$this->name.'/entry/'.$entry->get('id'));
+        }
     }
 
     public function post_edit($id) {
-        Event::on('crud_controller.post_edit', function($d) {
-            extract($d);
 
-            if (Request::instance()->is_rest()) {
-                URL::redirect('/'.$controller->name.'/'.$id);
-            } elseif ($result) {
-                URL::redirect('/'.$controller->name.'/entry/'.$id);
-            } else {
-                URL::redirect('/'.$controller->name.'/edit/'.$id);
-            }
-        });
-
-        $entry = $this->request->data();
+        $entry = Request::instance()->data();
         unset($entry['id']);
 
         $entry_o = $this->collection->find($id);
@@ -219,45 +233,12 @@ class Crud_Controller extends Controller {
 
         Message::success(($result) ? 'Record updated.' : 'No update for same record.');
 
-        Event::emit('crud_controller.post_edit', array(
-            'controller' => $this,
-            'result' => $result,
-            'id' => $id,
-        ));
-
-        return array('data' => $entry);
-    }
-
-    public function execute($request) {
-        $this->request = $request;
-
-        if ($request->is_rest()) {
-            if (is_numeric($request->uri->segments[2])) {
-                return $this->action_index(intval($request->uri->segments[2]));
-            } else {
-                return $this->action_index();
-            }
+        if (Request::instance()->is_rest()) {
+            return Response::redirect('/'.$this->name.'/'.$id);
+        } elseif ($result) {
+            return Response::redirect('/'.$this->name.'/entry/'.$id);
+        } else {
+            return Response::redirect('/'.$this->name.'/edit/'.$id);
         }
-
-        // filter validation
-        $filters = $this->filter_config();
-        $fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
-        $filter = (isset($filters[$fn])) ? $filters[$fn] : null;
-        if ($filter) {
-
-            $data = Request::data();
-            $filter_o = Filter::instance($filter);
-            $pass = $filter_o->valid($data);
-            Request::set_data($data);
-
-            if (!$pass) {
-                Message::error($filter_o->errors->format());
-                return array(
-                    'data' => $data,
-                );
-            }
-        }
-
-        return parent::execute($request);
     }
 }

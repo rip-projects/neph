@@ -60,7 +60,7 @@ class Model {
         if (method_exists($this, $method = 'get_'.$key)) {
             return $this->$method();
         } else {
-            return $this->attributes[$key];
+            return (isset($this->attributes[$key])) ? $this->attributes[$key] : null;
         }
     }
 

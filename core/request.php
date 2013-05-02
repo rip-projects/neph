@@ -3,6 +3,7 @@
 class Request {
 
 	static $instance;
+	static $route;
 
 	public $uri;
 	protected $accept = '';
@@ -99,7 +100,8 @@ class Request {
 
 	function data() {
 		if (!isset($this->data)) {
-			switch ($_SERVER['CONTENT_TYPE']) {
+			$content_type = (isset($_SERVER['CONTENT_TYPE'])) ? $_SERVER['CONTENT_TYPE'] : '';
+			switch ($content_type) {
 				case 'application/json':
 					$this->data = json_decode(file_get_contents('php://input'), true);
 				default:

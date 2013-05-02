@@ -8,6 +8,16 @@ define('MB_STRING', (int) function_exists('mb_get_info'));
 class Neph {
 	static $_site;
 
+	static function get_resource_file($uri) {
+		if (is_readable(Neph::path('site').Neph::site().$uri)) {
+			return Neph::path('site').Neph::site().$uri;
+		}
+
+		if (is_readable(Neph::path('sys').$uri)) {
+			return Neph::path('sys').$uri;
+		}
+	}
+
 	static function path($p) {
 		global $NEPH_CONFIG;
 
@@ -30,7 +40,7 @@ class Neph {
 		return static::$_site = 'ROOT';
 	}
 
-	static function init() {
+	static function load() {
 		global $NEPH_CONFIG;
 		// error_reporting(0);
 
@@ -78,7 +88,7 @@ class Neph {
 		});
 
 		// initialize language
-		Lang::init();
+		Lang::load();
 
 		// register orm manager
 		if (!IoC::registered('orm.manager')) {
@@ -94,9 +104,16 @@ class Neph {
 		}
 
 
-		// starting the routing activity and get the default response from
-		// router's route
-		Response::$instance = Router::instance()->route();
+		/**
+		 * starting the routing activity and get the default response from
+		 * router's route
+		 */
+		Request::$route = Router::instance()->route();
+		Response::$instance = Request::$route->call();
+
+		/**
+		 * render the response to send later
+		 */
 		Response::$instance->render();
 
 		Event::emit('response.pre_send');
@@ -114,4 +131,4 @@ class Neph {
 	}
 }
 
-Neph::init();
+Neph::load();

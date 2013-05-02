@@ -2,8 +2,16 @@
 
 use \PDO;
 use \Neph\Core\Config;
+use \Neph\Core\Event;
 
 abstract class Connection {
+
+    /**
+     * All of the queries that have been executed on all connections.
+     *
+     * @var array
+     */
+    public static $queries = array();
 
     var $config;
     protected $connection;
@@ -129,5 +137,22 @@ abstract class Connection {
         } else {
             return $statement->fetchAll($style);
         }
+    }
+
+    /**
+     * Log the query and fire the core query event.
+     *
+     * @param  string  $sql
+     * @param  array   $bindings
+     * @param  int     $start
+     * @return void
+     */
+    protected function log($sql, $bindings, $start)
+    {
+        $time = number_format((microtime(true) - $start) * 1000, 2);
+
+        Event::emit('neph.query', array($sql, $bindings, $time));
+
+        static::$queries[] = compact('sql', 'bindings', 'time');
     }
 }

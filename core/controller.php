@@ -5,8 +5,6 @@ class Controller {
 	protected static $dependencies = array();
 	protected static $registries = array();
 
-	protected $request;
-
 	public static function register($name, $ns = '') {
 		static::$registries[$name] = $ns;
 	}
@@ -63,47 +61,31 @@ class Controller {
 		return $controller;
 	}
 
-	static function get_resource_file($uri, $module = '') {
-		if (!$module) {
-			foreach(static::$dependencies as $path) {
-				if (is_readable($path.$uri)) {
-					return $path.$uri;
-				}
-			}
-
-			if (is_readable(Neph::path('site').Neph::site().$uri)) {
-				return Neph::path('site').Neph::site().$uri;
-			}
-
-			if (is_readable(Neph::path('sys').$uri)) {
-				return Neph::path('sys').$uri;
-			}
-		} else {
-			if (is_readable(static::$module_paths[$module].$uri)) {
-				return static::$module_paths[$module].$uri;
+	public static function get_resource_file($uri) {
+		foreach(static::$dependencies as $path) {
+			if (is_readable($path.$uri)) {
+				return $path.$uri;
 			}
 		}
 
+		return Neph::get_resource_file($uri);
 	}
 
-	function execute($request) {
-		$this->request = $request;
-		$params = array_slice($request->uri->segments, 3);
+	public function __construct() {
+		$self = $this;
 
-		if (method_exists($this, $fn = $request->method().'_'.$request->uri->segments[2])) {
-			$response = call_user_func_array(array($this, $fn), $params);
-		} elseif (method_exists($this, 'action_'.$request->uri->segments[2])) {
-			$response = call_user_func_array(array($this, 'action_'.$request->uri->segments[2]), $params);
-		} else {
-			// get view file name just to check whether view is exist
-			$view = static::get_resource_file('/views/'.$request->uri->segments[2].'.php');
-			if (empty($view)) {
-				return Response::error(404);
+		Event::on('route.pre_call', function() use ($self) {
+			if (!$self->authorized()) {
+				return Response::redirect('/login');
 			}
-
-			$response = '';
-		}
-
-		return $response;
+		});
 	}
+
+	protected function authorized() {
+        if (Auth::check()) {
+        	return true;
+        }
+
+        return false;
+    }
 }

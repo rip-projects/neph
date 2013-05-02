@@ -81,7 +81,7 @@ class Lang {
         return false;
     }
 
-    static function init() {
+    static function load() {
         $ok = false;
         if ($lang = Event::until('neph.language')) $ok = static::set_default($lang);
         if (!$ok && $lang = Cookie::raw_get(static::$cookie_key)) $ok = static::set_default($lang);

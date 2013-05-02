@@ -22,12 +22,4 @@ class URL {
 
 		return Config::get('config.url').Config::get('config.index').$uri;
 	}
-
-	static function redirect($uri) {
-		Event::emit('response.pre_send');
-		Event::emit('response.send');
-
-		header('Location: '.static::site($uri));
-		exit;
-	}
 }
