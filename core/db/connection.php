@@ -2,18 +2,26 @@
 
 use \PDO;
 use \Neph\Core\Config;
+use \Neph\Core\Event;
 
 abstract class Connection {
+
+    /**
+     * All of the queries that have been executed on all connections.
+     *
+     * @var array
+     */
+    public static $queries = array();
 
     var $config;
     protected $connection;
 
     protected $options = array(
-            PDO::ATTR_CASE => PDO::CASE_LOWER,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
-            PDO::ATTR_STRINGIFY_FETCHES => false,
-            PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_CASE => PDO::CASE_LOWER,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
+        PDO::ATTR_STRINGIFY_FETCHES => false,
+        PDO::ATTR_EMULATE_PREPARES => false,
     );
 
     function __construct($config) {
@@ -129,5 +137,22 @@ abstract class Connection {
         } else {
             return $statement->fetchAll($style);
         }
+    }
+
+    /**
+     * Log the query and fire the core query event.
+     *
+     * @param  string  $sql
+     * @param  array   $bindings
+     * @param  int     $start
+     * @return void
+     */
+    protected function log($sql, $bindings, $start)
+    {
+        $time = number_format((microtime(true) - $start) * 1000, 2);
+
+        Event::emit('neph.query', array($sql, $bindings, $time));
+
+        static::$queries[] = compact('sql', 'bindings', 'time');
     }
 }

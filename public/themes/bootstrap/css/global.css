@@ -6,6 +6,11 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
     height: inherit;
 }
 
+.grid-row-actions {
+    white-space: nowrap;
+    width: 1px;
+}
+
 .grid-row-action {
     text-indent: 10000px;
     overflow: hidden;
@@ -45,3 +50,45 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
 .table tbody tr.selected > td {
     background-color: #fcf8e3;
 }
+
+.grid-row .level-0,
+.grid-row .level-1,
+.grid-row .level-2,
+.grid-row .level-3,
+.grid-row .level-4 {
+    background: url('../img/glyphicons-halflings.png');
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    background-position: -265px -72px;
+}
+
+.grid-row .level-1 {
+    margin-left: 20px;
+}
+
+.grid-row .level-2 {
+    margin-left: 40px;
+}
+
+.grid-row .level-3 {
+    margin-left: 60px;
+}
+
+.grid-row .level-4 {
+    margin-left: 80px;
+}
+
+.grid-row .level-leaf {
+    background: none;
+}
+
+.grid-row .level-leaf:before {
+    content: '-';
+}
+
+td > input[type="text"] {
+    width: 100%;
+    min-width: 100%;
+}
+

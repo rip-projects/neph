@@ -37,19 +37,40 @@ class Connection extends \Neph\Core\DB\Connection {
 		static $columns = array();
 		if (empty($columns[$table])) {
 			$columns = $this->query($this->grammar()->columns($table));
+
 			$c = array();
 			foreach ($columns as $col) {
 				$c1 = array();
+				$c1['type'] = $this->get_type($col);
 
 				$t = explode('(', $col->type);
-				$c1['type'] = $t[0];
+				$c1['dbtype'] = $t[0];
 				$c1['length'] = (empty($t[1])) ? NULL : substr($t[1], 0, count($t[1]) - 2);
-				$c1['auto_increment'] = preg_match('/auto_increment/', $col->extra);
+
+				if ($c1['type'] == 'integer' && $auto_increment = preg_match('/auto_increment/', $col->extra)) {
+					$c1['auto_increment'] = $auto_increment;
+				}
+
 				$c[$col->field] = $c1;
 			}
 			$columns[$table] = $c;
 		}
 		return $columns[$table];
 	}
+
+	function get_type($col) {
+        if (stripos($col->type, 'int') !== FALSE) {
+            return 'integer';
+        } elseif (stripos($col->type, 'double') !== FALSE) {
+            return 'decimal';
+        } elseif (stripos($col->type, 'varchar') !== FALSE) {
+            return 'string';
+        } elseif (stripos($col->type, 'datetime') !== FALSE) {
+            return 'datetime';
+        } elseif (stripos($col->type, 'text') !== FALSE) {
+            return 'text';
+        }
+        return 'unknown';
+    }
 
 }

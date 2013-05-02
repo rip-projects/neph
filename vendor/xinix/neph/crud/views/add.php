@@ -2,13 +2,14 @@
 use \Neph\Core\URL;
 use \Neph\Core\String;
 use \Neph\Core\Request;
+use \Neph\Core\Helpers\Page;
 ?>
 
 <div class="row-fluid">
-    <?php echo $crud->breadcrumb(array(
+    <?php echo Page::breadcrumb(array(
         String::humanize(Request::instance()->uri->segments[1]) => '/'.Request::instance()->uri->segments[1],
-        'Add' => Request::instance()->uri->pathinfo,
+        l('Add') => Request::instance()->uri->pathinfo,
     )) ?>
 </div>
 
-<?php echo $crud->form((isset($data)) ? $data : array()) ?>
+<?php echo $form->show((isset($data)) ? $data : array()) ?>
