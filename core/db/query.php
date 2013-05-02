@@ -6,6 +6,14 @@ use \Neph\Core\Paginator;
 
 class Query {
 
+	private $storagemap_filters = array(
+		'ne' => '!=',
+		'gt' => '>',
+		'gte' => '>=',
+		'lt' => '<',
+		'lte' => '<=',
+		);
+
 	/**
 	 * The database connection.
 	 *
@@ -918,6 +926,37 @@ class Query {
 		$sql = $this->grammar->delete($this);
 
 		return $this->connection->query($sql, $this->bindings);
+	}
+
+	public function filter_query_where($key, $value) {
+
+
+		$split = explode('!', $key);
+		$key = $split[0];
+		$op = (empty($this->storagemap_filters[$split[1]])) ? $split[1] : $this->storagemap_filters[$split[1]];
+
+		switch ($op) {
+			case 'like':
+				$value = '%'.$value.'%';
+				break;
+			default:
+				break;
+		}
+
+		$this->where($key, $op, $value);
+	}
+
+	public function filter_query($arg) {
+		if (!empty($arg['limit'])) {
+			$this->limit = $arg['limit'];
+		}
+		unset($arg['limit']);
+
+		foreach($arg as $key => $value) {
+			$this->filter_query_where($key, $value);
+		}
+
+		return $this;
 	}
 
 	/**

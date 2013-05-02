@@ -16,5 +16,4 @@ class Grammar extends \Neph\Core\DB\Query\Grammar {
     function check($q) {
         return "SHOW TABLES LIKE '$q'";
     }
-
 }

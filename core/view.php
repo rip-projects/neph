@@ -17,7 +17,7 @@ class View {
 				$this->file = '';
 			}
 		} else {
-			$this->file = Loader::resource_file('/views'.$this->uri.'.php');
+			$this->file = Controller::get_resource_file('/views'.$this->uri.'.php');
 		}
 		if (!$this->file) {
 			throw new \Exception("Shame on you, you don't have the view: ".$this->uri);

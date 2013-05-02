@@ -26,6 +26,28 @@ class DB {
 		return static::$connections[$connection];
 	}
 
+	/**
+	 * Get the profiling data for all queries.
+	 *
+	 * @return array
+	 */
+	public static function profile()
+	{
+		return Connection::$queries;
+	}
+
+	/**
+	 * Get the last query that was executed.
+	 *
+	 * Returns false if no queries have been executed yet.
+	 *
+	 * @return string
+	 */
+	public static function last_query()
+	{
+		return end(Connection::$queries);
+	}
+
 	static function __callStatic($method, $args) {
 		return call_user_func_array(array(static::connection(), $method), $args);
 	}
