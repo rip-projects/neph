@@ -4,25 +4,18 @@ class Request {
 
 	static $instance;
 
-	static function instance() {
-		if (!static::$instance) {
-			static::$instance = new RequestImpl();
-		}
-		return static::$instance;
-	}
-
-	static function __callStatic($method, $parameters) {
-		return call_user_func_array(array(static::instance(), $method), $parameters);
-	}
-
-}
-
-class RequestImpl {
-	var $uri;
+	public $uri;
 	protected $accept = '';
 	protected $location = array();
 
 	private $data;
+
+	static function instance() {
+		if (!static::$instance) {
+			static::$instance = new static();
+		}
+		return static::$instance;
+	}
 
 	function __construct() {
 		if (is_cli()) {
@@ -82,20 +75,24 @@ class RequestImpl {
 
 	function language() {
 		if (empty($this->language)) {
-			$accepting = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-			foreach ($accepting as &$value) {
-				$exploded = explode(';', $value);
-				$lang = explode('-', trim($exploded[0]));
-				$value = array(
-					'lang' => $lang[0],
-					'country' => (isset($lang[1])) ? $lang[1] : '',
-					'priority' => (empty($exploded[1]) ? 1 : doubleval(substr($exploded[1], 2))),
-				);
+			if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+				$this->language = array();
+			} else {
+				$accepting = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+				foreach ($accepting as &$value) {
+					$exploded = explode(';', $value);
+					$lang = explode('-', trim($exploded[0]));
+					$value = array(
+						'lang' => $lang[0],
+						'country' => (isset($lang[1])) ? $lang[1] : '',
+						'priority' => (empty($exploded[1]) ? 1 : doubleval(substr($exploded[1], 2))),
+					);
+				}
+				usort($accepting, function ($a, $b) {
+				    return $a['priority'] <= $b['priority'];
+				});
+				$this->language = $accepting;
 			}
-			usort($accepting, function ($a, $b) {
-			    return $a['priority'] <= $b['priority'];
-			});
-			$this->language = $accepting;
 		}
 		return $this->language;
 	}
@@ -115,4 +112,5 @@ class RequestImpl {
 	function set_data($data) {
 		$this->data = $data;
 	}
+
 }

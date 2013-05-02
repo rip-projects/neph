@@ -1,227 +1,165 @@
 <?php namespace Neph\Core\DB\ORM;
 
 use \Neph\Core\DB;
+use \Neph\Core\URL;
+use \Neph\Core\IoC;
 use \Neph\Core\Loader;
 use \Neph\Core\Event;
 
 class Model {
-    static $key = 'id';
-    static $table;
-    static $columns = array();
-    static $accessible;
-    public static $connection;
-    public static $hidden = array();
+    protected $connection;
+    protected $key = 'id';
+    protected $name;
+    protected $table;
+    protected $collection;
+    protected $columns;
+    protected $hidden = array();
+    protected $transient = array();
+    protected $system_keys = array(
+        'parent'        => 'parent',
+        'status'        => 'x_status',
+        'created_time'  => 'x_created_time',
+        'updated_time'  => 'x_updated_time',
+    );
+    protected $options = array();
 
-    static $factories = array();
-
-    protected $attributes = array();
-    protected $original = array();
-    public $relationships = array();
-
+    protected $attributes;
+    protected $original;
     protected $exists = false;
 
-    static function all() {
-        return DB::table(static::table())->get();
-    }
+    function __construct($attributes = array(), $options = '') {
+        $this->options = (empty($options)) ? array() : (array) $options;
 
-    static function table() {
-        if (!isset(static::$table)) static::$table = strtolower(class_basename(new static()));
-        return static::$table;
-    }
+        if (isset($options['name'])) $this->name = $this->options['name'];
+        if (isset($options['table'])) $this->table = $this->options['table'];
+        if (isset($options['key'])) $this->key = $this->options['key'];
+        if (isset($options['connection'])) $this->connection = $this->options['connection'];
+        if (isset($options['exists'])) $this->exists = $this->options['exists'];
 
-    static function check() {
-        $check = DB::check(static::table());
-        throw new Exception('Unfinished yet!');
-    }
+        $this->original = $this->attributes = $attributes;
 
-    static function invoker($name) {
-        return new ModelInvoker($name);
-    }
-
-    static function factory($name) {
-        if (!isset(static::$factories[$name])) {
-            static::$factories[$name] = new ModelFactory($name);
-        }
-        return static::$factories[$name];
-    }
-
-    static function columns() {
-        if (empty(static::$columns)) {
-            static::$columns = DB::columns(static::table());
-        }
-        return static::$columns;
-    }
-
-    public static function create($attributes) {
-        $model = new static($attributes);
-
-        $success = $model->save();
-
-        return ($success) ? $model : false;
-    }
-
-    function get_key() {
-        return $this->attributes[static::$key];
-    }
-
-    public function dirty()
-    {
-        return ! $this->exists or count($this->get_dirty()) > 0;
-    }
-
-    static public function query() {
-        return DB::table(static::table());
-    }
-
-    public function save()
-    {
-        if ( ! $this->dirty()) return true;
-
-        Event::emit('orm.saving', array( 'model' => $this ));
-
-        // If the model exists, we only need to update it in the database, and the update
-        // will be considered successful if there is one affected row returned from the
-        // fluent query instance. We'll set the where condition automatically.
-        if ($this->exists)
-        {
-            $query = static::query()->where(static::$key, '=', $this->get_key());
-
-            $result = $query->update($this->get_dirty()) === 1;
-
-            if ($result) Event::emit('orm.updated', array( 'model' => $this ));;
+        if (!isset($this->name)) {
+            $this->name = strtolower(class_basename($this));
         }
 
-        // If the model does not exist, we will insert the record and retrieve the last
-        // insert ID that is associated with the model. If the ID returned is numeric
-        // then we can consider the insert successful.
-        else
-        {
-            $id = static::query()->insert_get_id($this->attributes, static::$key);
-
-            $this->attributes[static::$key] = $id;
-
-            $this->exists = $result = is_numeric($this->get_key());
-
-            if ($result) Event::emit('orm.created', array( 'model' => $this ));
+        if (!isset($this->table)) {
+            $this->table = $this->name;
         }
-
-        // After the model has been "saved", we will set the original attributes to
-        // match the current attributes so the model will not be viewed as being
-        // dirty and subsequent calls won't hit the database.
-        $this->original = $this->attributes;
-
-        if ($result) Event::emit('orm.saved', array( 'model' => $this ));
-
-        return $result;
     }
 
-    public function __construct($attributes = array(), $exists = false) {
-        $this->exists = $exists;
-
-        $this->fill($attributes);
-    }
-
-    public function fill(array $attributes, $raw = false)
-    {
-        foreach ($attributes as $key => $value)
-        {
-            // If the "raw" flag is set, it means that we'll just load every value from
-            // the array directly into the attributes, without any accessibility or
-            // mutators being accounted for. What you pass in is what you get.
-            if ($raw)
-            {
-                $this->set_attribute($key, $value);
-
-                continue;
-            }
-
-            // If the "accessible" property is an array, the developer is limiting the
-            // attributes that may be mass assigned, and we need to verify that the
-            // current attribute is included in that list of allowed attributes.
-            if (is_array(static::$accessible))
-            {
-                if (in_array($key, static::$accessible))
-                {
-                    $this->$key = $value;
-                }
-            }
-
-            // If the "accessible" property is not an array, no attributes have been
-            // white-listed and we are free to set the value of the attribute to
-            // the value that has been passed into the method without a check.
-            else
-            {
-                $this->$key = $value;
-            }
+    public function set($key, $value) {
+        if (method_exists($this, $method = 'set_'.$key)) {
+            $this->$method($value);
+        } else {
+            $this->attributes[$key] = $value;
         }
-
-        // If the original attribute values have not been set, we will set
-        // them to the values passed to this method allowing us to easily
-        // check if the model has changed since hydration.
-        if (count($this->original) === 0)
-        {
-            $this->original = $this->attributes;
-        }
-
         return $this;
     }
 
-    function __set($key, $value) {
-        $this->attributes[$key] = $value;
+    public function get($key) {
+        if (method_exists($this, $method = 'get_'.$key)) {
+            return $this->$method();
+        } else {
+            return $this->attributes[$key];
+        }
     }
 
-    public function to_array()
-    {
-        $attributes = array();
+    public function connection() {
+        return $this->connection;
+    }
 
-        // First we need to gather all of the regular attributes. If the attribute
-        // exists in the array of "hidden" attributes, it will not be added to
-        // the array so we can easily exclude things like passwords, etc.
-        foreach (array_keys($this->attributes) as $attribute)
-        {
+    protected function collection() {
+        return IoC::resolve('orm.manager')->collection($this->name);
+    }
 
-            if ( ! in_array($attribute, static::$hidden))
-            {
-                $attributes[$attribute] = $this->attributes[$attribute];
+    public function children() {
+        return $this->collection()->where($this->system_keys['parent'], '=', $this->attributes[$this->key])->get();
+    }
+
+    public function key($key_name = '') {
+        return (empty($key_name)) ? $this->key : ((empty($this->system_keys[$key_name])) ? '' : $this->system_keys[$key_name]);
+    }
+
+    public function columns() {
+        if (!isset($this->columns)) {
+            $this->columns = DB::connection($this->connection)->columns($this->table);
+
+            if (!$this->key('name')) {
+                $column_keys = array_keys($this->columns);
+                $this->system_keys['name'] = (isset($column_keys[1])) ? $column_keys[1] : $column_keys[0];
+            }
+
+            if (isset($this->columns[$this->system_keys['parent']])) {
+                $this->columns[$this->system_keys['parent']]['source'] = 'model:'.$this->name.':'.$this->key().':'.$this->key('name');
+            }
+        }
+        return $this->columns;
+    }
+
+    public function hidden() {
+        return $this->hidden;
+    }
+
+    public function save() {
+        $columns = $this->columns();
+        $now = new \DateTime();
+
+
+        if ($this->system_keys['status'] && isset($columns[$this->system_keys['status']])) {
+            if (!isset($this->attributes[$this->system_keys['status']])) {
+                $this->attributes[$this->system_keys['status']] = 1;
             }
         }
 
-        foreach ($this->relationships as $name => $models)
-        {
-            // Relationships can be marked as "hidden", too.
-            if (in_array($name, static::$hidden)) continue;
-
-            // If the relationship is not a "to-many" relationship, we can just
-            // to_array the related model and add it as an attribute to the
-            // array of existing regular attributes we gathered.
-            if ($models instanceof Model)
-            {
-                $attributes[$name] = $models->to_array();
-            }
-
-            // If the relationship is a "to-many" relationship we need to spin
-            // through each of the related models and add each one with the
-            // to_array method, keying them both by name and ID.
-            elseif (is_array($models))
-            {
-                $attributes[$name] = array();
-
-                foreach ($models as $id => $model)
-                {
-                    $attributes[$name][$id] = $model->to_array();
-                }
-            }
-            elseif (is_null($models))
-            {
-                $attributes[$name] = $models;
+        if ($this->system_keys['created_time'] && isset($columns[$this->system_keys['created_time']])) {
+            if (!$this->exists) {
+                $this->attributes[$this->system_keys['created_time']] = $now;
             }
         }
 
-        return $attributes;
+        if ($this->system_keys['updated_time'] && isset($columns[$this->system_keys['updated_time']])) {
+            $this->attributes[$this->system_keys['updated_time']] = $now;
+        }
+
+        if ($this->exists) {
+            $result = $this->collection()
+                ->where($this->key, '=', $this->attributes[$this->key])
+                ->update($this->attributes);
+        } else {
+            $result = $this->attributes[$this->key] = $this->collection()
+                ->insert_get_id($this->attributes);
+        }
+        $this->exists = true;
+
+        if (empty($result)) return 0;
+        else return 1;
     }
 
-    public static function __callStatic($method, $parameters) {
-        return call_user_func_array(array(static::query(), $method), $parameters);
+    public function delete() {
+        if ($this->exists) {
+            $result = $this->collection()->where($this->key, '=', $this->attributes[$this->key])->delete();
+            return $result;
+        }
     }
 
+    public function to_array() {
+        $attr = array(
+            '@type' => $this->name,
+            '@url' => URL::site('/'.$this->name.'/'.$this->attributes[$this->key()].'.json'),
+        );
+
+        $columns = array_merge(array_keys($this->columns()), $this->transient);
+        $columns = array_diff($columns, $this->hidden);
+
+        foreach ($columns as $column) {
+            $attr[$column] = $this->get($column);
+        }
+        return $attr;
+    }
+
+    public function fill($attributes) {
+        foreach((array) $attributes as $key => $value) {
+            $this->set($key, $value);
+        }
+    }
 }

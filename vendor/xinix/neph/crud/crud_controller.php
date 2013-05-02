@@ -1,219 +1,263 @@
 <?php namespace Xinix\Neph\Crud;
 
 use \Neph\Core\URL;
+use \Neph\Core\IoC;
 use \Neph\Core\DB;
 use \Neph\Core\DB\ORM\Model;
 use \Neph\Core\Event;
 use \Neph\Core\Controller;
-use \Neph\Core\Session;
-use \Neph\Core\Cookie;
 use \Neph\Core\Request;
 use \Xinix\Neph\Filter\Filter;
 use \Xinix\Neph\Message\Message;
+use \Xinix\Neph\Grid\Grid;
+use \Xinix\Neph\Form\Form;
 
 
 class Crud_Controller extends Controller {
-	var $name;
-	var $crud;
-	var $model;
-	var $filters = array();
 
-	function __construct() {
-		if (empty($this->name)) {
-			$name = explode('_', class_basename($this));
-			$this->name = strtolower($name[0]);
-			if ($this->name === 'crud') {
-				$this->name = Request::instance()->uri->segments[1];
-			}
-		}
+    protected $hidden = array(
+        'id',
+        'x_position',
+        'x_status',
+        'x_created_by',
+        'x_created_time',
+        'x_updated_by',
+        'x_updated_time'
+    );
 
-		if (DB::check($this->name)) {
-			$this->model = Model::factory($this->name);
-			$this->crud = $crud = new Crud($this->crud_config());
+    protected $name;
+    protected $collection;
+    protected $grid_config;
+    protected $form_config;
+    protected $filters = array();
 
-			Event::on('router.post_execute', function($data) use ($crud) {
-				if (is_array($data['response']) || empty($data['response'])) {
-					$data['response']['crud'] = $crud;
-				}
-			});
-		}
-	}
+    public function __construct() {
+        if (empty($this->name)) {
+            $name = explode('_', class_basename($this));
+            $this->name = strtolower($name[0]);
+            if ($this->name === 'crud') {
+                $this->name = Request::instance()->uri->segments[1];
+            }
+        }
 
-	function filter_config() {
-		return $this->filters;
-	}
+        if (DB::check($this->name)) {
+            $this->collection = IoC::resolve('orm.manager')->collection($this->name);
+        }
+    }
 
-	function crud_config() {
-		static $config;
+    protected function filter_config() {
+        return $this->filters;
+    }
 
-		if (!$config) {
-			$meta_columns = $this->model->columns();
-			$config = array(
-				'name' => $this->name,
-				'columns' => array_keys($meta_columns),
-				'meta_columns' => $meta_columns,
-				'actions' => array(
-					'edit' => '/'.$this->name.'/edit',
-					'delete' => '/'.$this->name.'/delete',
-				),
-			);
-		}
-		return $config;
-	}
+    protected function grid_config() {
+        if (!isset($this->grid_config)) {
+            $meta = $this->collection->columns();
+            $this->grid_config = array(
+                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'meta' => $meta,
+                'actions' => array(
+                    'edit' => '/'.$this->name.'/edit',
+                    'delete' => '/'.$this->name.'/delete',
+                ),
+            );
+        }
 
-	function _invoke($method, $key, $args = array()) {
-		if (method_exists($this, $fn = strtolower($method).'_'.$key)) {
-			return call_user_func_array(array($this, $fn), $args);
-		} else {
-			$fn = 'action_'.$key;
-			return call_user_func_array(array($this, $fn), $args);
-		}
-	}
+        return $this->grid_config;
+    }
 
-	function action_index($id = 0) {
-		if (!$this->request->is_rest()) {
-			if ($this->crud) {
-				URL::redirect('/'.$this->name.'/entries');
-			} else {
-				return;
-			}
-		}
+    protected function form_config() {
+        if (!isset($this->form_config)) {
+            $meta = $this->collection->columns();
+            $this->form_config = array(
+                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'meta' => $meta,
+                'actions' => array(
+                    'edit' => '/'.$this->name.'/edit',
+                    'delete' => '/'.$this->name.'/delete',
+                ),
+            );
+        }
+        return $this->form_config;
+    }
 
-		$method = $this->request->method();
+    public function action_index($id = 0) {
+        if (!$this->request->is_rest()) {
+            URL::redirect('/'.$this->name.'/entries');
+        }
 
-		switch ($method) {
-			case 'GET':
-				$fn = ($id) ? 'entry' : 'entries';
-				break;
-			case 'POST':
-			case 'PUT':
-				$method = 'POST';
-				$fn = ($id) ? 'edit' : 'add';
-				break;
-			case 'DELETE':
-				$method = 'POST';
-				$fn = 'delete';
-				break;
-		}
+        $method = $this->request->method();
 
-		if (isset($fn)) {
-			// FIXME run filter for matching fn
-			return $this->_invoke($method, $fn, array($id));
-		}
-	}
+        switch ($method) {
+            case 'GET':
+                $fn = ($id) ? 'entry' : 'entries';
+                break;
+            case 'POST':
+            case 'PUT':
+                $method = 'POST';
+                $fn = ($id) ? 'edit' : 'add';
+                break;
+            case 'DELETE':
+                $method = 'POST';
+                $fn = 'delete';
+                break;
+        }
 
-	function get_entry($id) {
-		$data = array();
-		$data['publish'] = $this->model->find($id);
-		return $data;
-	}
+        if (isset($fn)) {
+            if (method_exists($this, $fn = strtolower($method).'_'.$fn)) {
+                return $this->$fn($id);
+            } else {
+                $fn = 'action_'.$fn;
+                return $this->$fn($id);
+            }
+        }
+    }
 
-	function get_edit($id) {
-		$data = array();
-		$data['data'] = $this->model->find($id);
-		return $data;
-	}
+    public function get_entry($id) {
+        return array(
+            'publish' => $this->collection->find($id),
+            'form' => new Form($this->form_config()),
+        );
+    }
 
-	function get_delete($id) {
-		$ids = explode(',', $id);
-		foreach ($ids as $id) {
-			$id = trim($id);
-			if (empty($id)) continue;
+    public function get_add() {
+        $data = array(
+            'form' => new Form($this->form_config()),
+        );
+        return $data;
+    }
 
-			$this->model->delete($id);
-		}
+    public function get_edit($id) {
+        $data = array(
+            'data' => $this->collection->find($id),
+            'form' => new Form($this->form_config()),
+        );
+        return $data;
+    }
 
-		if ($this->request->is_rest()) {
-			return true;
-		} else {
-			Message::success('Record deleted.');
-			URL::redirect('/'.$this->name.'/entries');
-		}
-	}
+    public function get_delete($id) {
+        $ids = explode(',', $id);
+        foreach ($ids as $id) {
+            $id = trim($id);
+            if (empty($id)) continue;
 
-	function get_entries() {
-		$data = array();
-		$data['publish']['entries'] = $this->model->all();
-		return $data;
-	}
+            $row = $this->collection->find($id);
+            if (!empty($row)) {
+                $row->delete();
+            }
+        }
 
-	function post_add() {
-		Event::on('crud_controller.post_add', function($d) {
-			extract($d);
+        if ($this->request->is_rest()) {
+            return true;
+        } else {
+            Message::success('Record deleted.');
+            URL::redirect('/'.$this->name.'/entries');
+        }
+    }
 
-			if (Request::instance()->is_rest()) {
-				URL::redirect('/'.$controller->name.'/'.$data['id']);
-			} else {
-				Message::success('Record added.');
+    public function get_entries() {
+        $data = array();
 
-				URL::redirect('/'.$controller->name.'/entry/'.$data['id']);
-			}
-		});
+        $config = $this->grid_config();
+        if (!$this->request->is_rest() && !empty($config['show_tree'])) {
+            $data['publish']['entries'] = $this->collection->root();
+        } else {
+            $results = $this->collection->filter_query($_GET)->get();
+            $entries = array();
+            foreach ($results as $key => $row) {
+                $entries[] = $row->to_array();
+            }
+            $data['publish']['entries'] = $entries;
+        }
 
-		$data = $this->request->data();
-		foreach ($data as $key => &$value) {
-			if (empty($value)) unset($data[$key]);
-		}
-		$data = $this->model->create($data)->to_array();
+        $data['grid'] = new Grid($this->grid_config());
+        return $data;
+    }
 
-		Event::emit('crud_controller.post_add', array(
-			'data' => $data,
-			'controller' => $this,
-		));
-	}
+    public function post_add() {
+        Event::on('crud_controller.post_add', function($d) {
+            extract($d);
 
+            $data = $data->to_array();
 
-	function post_edit($id) {
-		$entry = $this->request->data();
-		unset($entry['id']);
-		$result = $this->model->where('id', '=', $id)->update($entry);
-		if ($this->request->is_rest()) {
-			URL::redirect('/'.$this->name.'/'.$id);
-		} elseif ($result) {
-			Message::success('Record updated.');
-			URL::redirect('/'.$this->name.'/entry/'.$id);
-		} else {
-			Message::info('No update for same record.');
-			URL::redirect('/'.$this->name.'/edit/'.$id);
-		}
+            if (Request::instance()->is_rest()) {
+                URL::redirect('/'.$controller->name.'/'.$data['id']);
+            } else {
+                URL::redirect('/'.$controller->name.'/entry/'.$data['id']);
+            }
+        });
 
-		$data = array(
-			'data' => $entry,
-		);
+        $entry = $this->collection->prototype($this->request->data());
+        $entry->save();
 
-		return $data;
-	}
+        Message::success('Record added.');
 
-	function execute($request) {
-		$this->request = $request;
+        Event::emit('crud_controller.post_add', array(
+            'data' => $entry,
+            'controller' => $this,
+        ));
+    }
 
-		if ($request->is_rest()) {
-			if (is_numeric($request->uri->segments[2])) {
-				return $this->action_index(intval($request->uri->segments[2]));
-			} else {
-				return $this->action_index();
-			}
-		}
+    public function post_edit($id) {
+        Event::on('crud_controller.post_edit', function($d) {
+            extract($d);
 
-		// filter validation
-		$filters = $this->filter_config();
-		$fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
-		$filter = (isset($filters[$fn])) ? $filters[$fn] : null;
-		if ($filter) {
+            if (Request::instance()->is_rest()) {
+                URL::redirect('/'.$controller->name.'/'.$id);
+            } elseif ($result) {
+                URL::redirect('/'.$controller->name.'/entry/'.$id);
+            } else {
+                URL::redirect('/'.$controller->name.'/edit/'.$id);
+            }
+        });
 
-			$data = Request::data();
-			$filter_o = Filter::instance($filter);
-			$pass = $filter_o->valid($data);
-			Request::set_data($data);
+        $entry = $this->request->data();
+        unset($entry['id']);
 
-			if (!$pass) {
-				Message::error($filter_o->errors->format());
-				return array(
-					'data' => $data,
-				);
-			}
-		}
+        $entry_o = $this->collection->find($id);
+        $entry_o->fill($entry);
+        $result = $entry_o->save();
 
-		return parent::execute($request);
-	}
+        Message::success(($result) ? 'Record updated.' : 'No update for same record.');
+
+        Event::emit('crud_controller.post_edit', array(
+            'controller' => $this,
+            'result' => $result,
+            'id' => $id,
+        ));
+
+        return array('data' => $entry);
+    }
+
+    public function execute($request) {
+        $this->request = $request;
+
+        if ($request->is_rest()) {
+            if (is_numeric($request->uri->segments[2])) {
+                return $this->action_index(intval($request->uri->segments[2]));
+            } else {
+                return $this->action_index();
+            }
+        }
+
+        // filter validation
+        $filters = $this->filter_config();
+        $fn = strtolower($this->request->method()).'_'.$this->request->uri->segments[2];
+        $filter = (isset($filters[$fn])) ? $filters[$fn] : null;
+        if ($filter) {
+
+            $data = Request::data();
+            $filter_o = Filter::instance($filter);
+            $pass = $filter_o->valid($data);
+            Request::set_data($data);
+
+            if (!$pass) {
+                Message::error($filter_o->errors->format());
+                return array(
+                    'data' => $data,
+                );
+            }
+        }
+
+        return parent::execute($request);
+    }
 }

@@ -7,12 +7,16 @@ class URL {
 		return static::base().'themes/'.Config::get('config.theme').'/'.$uri;
 	}
 
+	static function vendor($uri) {
+		return static::base().'vendor/'.$uri;
+	}
+
 	static function base() {
 		return Config::get('config.url');
 	}
 
 	static function site($uri = '') {
-		if (empty($uri)) return Config::get('config.url');
+		// if (empty($uri)) return Config::get('config.url');
 
 		if (preg_match('#^[a-z]+:\/\/#', $uri)) return $uri;
 

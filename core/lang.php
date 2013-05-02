@@ -85,13 +85,14 @@ class Lang {
         $ok = false;
         if ($lang = Event::until('neph.language')) $ok = static::set_default($lang);
         if (!$ok && $lang = Cookie::raw_get(static::$cookie_key)) $ok = static::set_default($lang);
-        $_ls = Request::language();
+        $_ls = Request::instance()->language();
         $accepted = array();
         foreach ($_ls as $v) {
             if (!$ok) $ok = static::set_default($v['lang']);
             if ($ok) break;
         }
-        if (!$ok && $lang = \Config::get('config.language', 'en')) return static::set_default($lang);
+
+        if (!$ok && $lang = Config::get('config.language', 'en')) return static::set_default($lang);
         if (!$ok) return static::set_default('en', true);
     }
 

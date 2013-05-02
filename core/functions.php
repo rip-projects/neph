@@ -162,3 +162,11 @@ function array_merge_recursive_distinct ( array &$array1, array &$array2 )
 
   return $merged;
 }
+
+function with($object) {
+    return $object;
+}
+
+function is_class_of($a, $b) {
+    return $a == $b || is_subclass_of($a, $b);
+}

@@ -3,26 +3,17 @@
 class Router {
 	static private $instance;
 
-	static function instance() {
-		if (!static::$instance) {
-			static::$instance = new RouterImpl();
-		}
-		return static::$instance;
-	}
-
-	static function __callStatic($method, $parameters) {
-		return call_user_func_array(array(static::instance(), $method), $parameters);
-	}
-
-}
-
-class RouterImpl {
-	var $routes = array(
+	private $routes = array(
 		'GET' => array(),
 		'POST' => array(),
 	);
 
-	function init() {}
+	static function instance() {
+		if (!static::$instance) {
+			static::$instance = new static();
+		}
+		return static::$instance;
+	}
 
 	function register($method, $key, $fn) {
 		$this->routes[$method][$key] = $fn;
@@ -35,15 +26,17 @@ class RouterImpl {
 	function route($request = '') {
 		if ($request === '') {
 			$request = Request::instance();
-		} elseif (!$request instanceof RequestImpl) {
+		} elseif (!$request instanceof Request) {
 			Request::instance()->forward($request);
 			return $this->route(Request::instance());
 		}
 
+		// route to registered route if exist
 		if (isset($this->routes[$request->method()][$request->uri->pathinfo])) {
 			return $this->execute($request, $this->routes[$request->method()][$request->uri->pathinfo]);
 		}
 
+		// forward to default route if non standard MVC accepted pathinfo
 		if ($request->uri->pathinfo === '/') {
 			Request::instance()->forward('/home/index');
 			return $this->route(Request::instance());
@@ -51,7 +44,6 @@ class RouterImpl {
 			Request::instance()->forward('/'.$request->uri->segments[1].'/index');
 			return $this->route(Request::instance());
 		}
-
 
 		try {
 			$controller = Controller::load($request->uri->segments[1]);
@@ -95,6 +87,5 @@ class RouterImpl {
 		// 404
 		return Response::error(404);
 	}
-}
 
-Router::init();
+}

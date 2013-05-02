@@ -1,14 +1,9 @@
 <?php namespace Neph\Core;
 
-use \Neph\Core\Error;
-use \Neph\Core\Event;
-
-// error_reporting(0);
+use \Neph\Core\DB\ORM\Manager;
 
 define('NEPH_START', microtime(true));
 define('MB_STRING', (int) function_exists('mb_get_info'));
-
-ob_start('mb_output_handler');
 
 class Neph {
 	static $_site;
@@ -36,27 +31,78 @@ class Neph {
 	}
 
 	static function init() {
+		global $NEPH_CONFIG;
+		// error_reporting(0);
+
+		ob_start('mb_output_handler');
+
+		$cwd = getcwd();
+		$NEPH_CONFIG = array_merge(array(
+			'site' => $cwd.'/../sites/',
+			'sys' => $cwd.'/../core/',
+			'storage' => $cwd.'/../storage/',
+			'vendor' => $cwd.'/../vendor/',
+		), $NEPH_CONFIG);
+
+		require Neph::path('sys').'functions.php';
+		require Neph::path('sys').'event.php';
+		require Neph::path('sys').'loader.php';
+		spl_autoload_register(array('Neph\\Core\\Loader', 'load'));
+
+
+		// FIXME fix this exception handler for uncaught no module exist error
+		// set_exception_handler(function($e) {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::exception($e);
+		// });
+
+		// set_error_handler(function($code, $error, $file, $line) {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::native($code, $error, $file, $line);
+		// });
+
+		// register_shutdown_function(function() {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::shutdown();
+		// });
+
+
+		Loader::directories(Neph::path('vendor'));
+		Loader::namespaces(array('Neph\\Core' => Neph::path('sys')));
+
+		// on response send try to save session
 		Event::on('response.send', function() {
 			if (!is_cli() && Config::get('session.default', '') !== '') {
 				Session::save();
 			}
 		});
 
+		// initialize language
 		Lang::init();
 
+		// register orm manager
+		if (!IoC::registered('orm.manager')) {
+			IoC::singleton('orm.manager', function() {
+				return new Manager;
+			});
+		}
+
+		// read custom site start procedure
 		$start_file = static::path('site').static::site().'/start.php';
 		if (is_readable($start_file)) {
 			include $start_file;
 		}
 
-		// Starting the routing activity
-		Response::$default = Router::route();
-		Response::$default->render();
+
+		// starting the routing activity and get the default response from
+		// router's route
+		Response::$instance = Router::instance()->route();
+		Response::$instance->render();
 
 		Event::emit('response.pre_send');
 		Event::emit('response.send');
 
-		$success = Response::$default->send();
+		$success = Response::$instance->send();
 
 		if (is_cli()) {
 			echo "\n";
@@ -67,40 +113,5 @@ class Neph {
 		}
 	}
 }
-
-$cwd = getcwd();
-$def_config = array(
-	'site' => $cwd.'/../sites/',
-	'sys' => $cwd.'/../core/',
-	'storage' => $cwd.'/../storage/',
-	'vendor' => $cwd.'/../vendor/',
-);
-$NEPH_CONFIG = $NEPH_CONFIG + $def_config;
-
-require Neph::path('sys').'functions.php';
-require Neph::path('sys').'event.php';
-require Neph::path('sys').'loader.php';
-spl_autoload_register(array('Neph\\Core\\Loader', 'load'));
-
-
-// FIXME fix this exception handler for uncaught no module exist error
-set_exception_handler(function($e) {
-	require_once Neph::path('sys').'error.php';
-	Error::exception($e);
-});
-
-set_error_handler(function($code, $error, $file, $line) {
-	require_once Neph::path('sys').'error.php';
-	Error::native($code, $error, $file, $line);
-});
-
-register_shutdown_function(function() {
-	require_once Neph::path('sys').'error.php';
-	Error::shutdown();
-});
-
-
-Loader::directories(Neph::path('vendor'));
-Loader::namespaces(array('Neph\\Core' => Neph::path('sys')));
 
 Neph::init();

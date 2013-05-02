@@ -51,7 +51,7 @@ class Cookie {
     public static function raw_get($name, $default = null) {
         if (isset(static::$jar[$name])) return static::$jar[$name]['value'];
 
-        if (!is_null($value = Request::cookie($name))) {
+        if (!is_null($value = Request::instance()->cookie($name))) {
             return $value;
         }
     }

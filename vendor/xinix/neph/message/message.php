@@ -3,6 +3,7 @@
 use \Neph\Core\View;
 use \Neph\Core\Session;
 use \Neph\Core\Event;
+use \Neph\Core\Request;
 
 class Message {
 
@@ -36,6 +37,8 @@ class Message {
     }
 
     function _append($severity, $message) {
+        if (Request::instance()->is_rest()) return;
+
         $this->messages[$severity][] = $message;
         $this->dirty = true;
     }
