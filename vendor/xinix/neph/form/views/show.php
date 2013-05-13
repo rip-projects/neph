@@ -10,9 +10,9 @@ use \Neph\Core\URL;
         <div class="row-fluid">
             <label class="span2"><?php echo String::humanize($column) ?></label>
             <?php if ($readonly): ?>
-                <?php echo $self->text($column, (empty($entry[$column])) ? '' : $entry[$column], array('class' => 'span10'), $readonly) ?>
+                <?php echo $self->text($column, get($entry, $column), array('class' => 'span10'), $readonly) ?>
             <?php else: ?>
-                <?php echo $self->input($column, (empty($entry[$column])) ? '' : $entry[$column], array('class' => 'span10'), $readonly) ?>
+                <?php echo $self->input($column, get($entry, $column), array('class' => 'span10'), $readonly) ?>
             <?php endif ?>
         </div>
         <?php endforeach ?>

@@ -61,55 +61,59 @@ class Neph {
 
 
 		// FIXME fix this exception handler for uncaught no module exist error
-		// set_exception_handler(function($e) {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::exception($e);
-		// });
+		set_exception_handler(function($e) {
+			require_once Neph::path('sys').'error.php';
+			Error::exception($e);
+		});
 
-		// set_error_handler(function($code, $error, $file, $line) {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::native($code, $error, $file, $line);
-		// });
+		set_error_handler(function($code, $error, $file, $line) {
+			require_once Neph::path('sys').'error.php';
+			Error::native($code, $error, $file, $line);
+		});
 
-		// register_shutdown_function(function() {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::shutdown();
-		// });
+		register_shutdown_function(function() {
+			require_once Neph::path('sys').'error.php';
+			Error::shutdown();
+		});
 
 
 		Loader::directories(Neph::path('vendor'));
 		Loader::namespaces(array('Neph\\Core' => Neph::path('sys')));
 
-		// on response send try to save session
-		Event::on('response.send', function() {
-			if (!is_cli() && Config::get('session.default', '') !== '') {
-				Session::save();
-			}
-		});
-
-		// initialize language
-		Lang::load();
-
-		// register orm manager
-		if (!IoC::registered('orm.manager')) {
-			IoC::singleton('orm.manager', function() {
-				return new Manager;
+		try {
+			// on response send try to save session
+			Event::on('response.send', function() {
+				if (!is_cli() && Config::get('session.default', '') !== '') {
+					Session::save();
+				}
 			});
+
+			// initialize language
+			Lang::load();
+
+			// register orm manager
+			if (!IoC::registered('orm.manager')) {
+				IoC::singleton('orm.manager', function() {
+					return new Manager;
+				});
+			}
+
+			// read custom site start procedure
+			$start_file = static::path('site').static::site().'/start.php';
+			if (is_readable($start_file)) {
+				include $start_file;
+			}
+
+
+			/**
+			 * starting the routing activity and get the default response from
+			 * router's route
+			 */
+			Request::$route = Router::instance()->route();
+			Response::$instance = Request::$route->call();
+		} catch(\Exception $e) {
+			Response::$instance = Response::error(500, $e->getMessage(), array('exception' => $e));
 		}
-
-		// read custom site start procedure
-		$start_file = static::path('site').static::site().'/start.php';
-		if (is_readable($start_file)) {
-			include $start_file;
-		}
-
-
-		/**
-		 * starting the routing activity and get the default response from
-		 * router's route
-		 */
-		Request::$route = Router::instance()->route();
-		Response::$instance = Request::$route->call();
 
 		/**
 		 * render the response to send later

@@ -3,8 +3,11 @@
 use \Neph\Core\DB;
 use \Neph\Core\URL;
 use \Neph\Core\IoC;
+use \Neph\Core\Auth;
 use \Neph\Core\Loader;
 use \Neph\Core\Event;
+use \Xinix\Neph\Filter\Filter;
+use \Xinix\Neph\Message\Message;
 
 class Model {
     protected $connection;
@@ -17,15 +20,18 @@ class Model {
     protected $transient = array();
     protected $system_keys = array(
         'parent'        => 'parent',
-        'status'        => 'x_status',
-        'created_time'  => 'x_created_time',
-        'updated_time'  => 'x_updated_time',
+        'status'        => 'status',
+        'created_time'  => 'created_time',
+        'updated_time'  => 'updated_time',
+        'created_by'  => 'created_by',
+        'updated_by'  => 'updated_by',
     );
     protected $options = array();
 
     protected $attributes;
     protected $original;
     protected $exists = false;
+    protected $filter;
 
     function __construct($attributes = array(), $options = '') {
         $this->options = (empty($options)) ? array() : (array) $options;
@@ -68,7 +74,7 @@ class Model {
         return $this->connection;
     }
 
-    protected function collection() {
+    public function collection() {
         return IoC::resolve('orm.manager')->collection($this->name);
     }
 
@@ -100,10 +106,35 @@ class Model {
         return $this->hidden;
     }
 
+    protected function filter_config() {
+        if (!isset($this->filter)) {
+            $this->filter = array();
+            foreach ($this->columns() as $key => $item) {
+                $f = get($item, 'filter');
+                if (empty($f)) continue;
+                $this->filter[$key] = $f;
+            }
+        }
+        return $this->filter;
+    }
+
+    public function valid() {
+        $filter_o = new Filter($this->filter_config(), $this);
+        $pass = $filter_o->valid($this->attributes);
+        if (!$pass) {
+            Message::error($filter_o->errors->format());
+        }
+        return $pass;
+    }
+
+    public function exists() {
+        return $this->exists;
+    }
+
     public function save() {
         $columns = $this->columns();
         $now = new \DateTime();
-
+        $user_id = get(Auth::user(), 'id');
 
         if ($this->system_keys['status'] && isset($columns[$this->system_keys['status']])) {
             if (!isset($this->attributes[$this->system_keys['status']])) {
@@ -111,15 +142,27 @@ class Model {
             }
         }
 
-        if ($this->system_keys['created_time'] && isset($columns[$this->system_keys['created_time']])) {
-            if (!$this->exists) {
+        if (!$this->exists) {
+            if ($this->system_keys['created_time'] && isset($columns[$this->system_keys['created_time']])) {
                 $this->attributes[$this->system_keys['created_time']] = $now;
+            }
+            if ($this->system_keys['created_by'] && isset($columns[$this->system_keys['created_by']])) {
+                $this->attributes[$this->system_keys['created_by']] = $user_id;
             }
         }
 
         if ($this->system_keys['updated_time'] && isset($columns[$this->system_keys['updated_time']])) {
             $this->attributes[$this->system_keys['updated_time']] = $now;
         }
+        if ($this->system_keys['updated_by'] && isset($columns[$this->system_keys['updated_by']])) {
+            $this->attributes[$this->system_keys['updated_by']] = $user_id;
+        }
+
+        if (!$this->valid()) {
+            return 0;
+        }
+
+        $this->attributes = $this->cleanup($this->attributes);
 
         if ($this->exists) {
             $result = $this->collection()
@@ -133,6 +176,15 @@ class Model {
 
         if (empty($result)) return 0;
         else return 1;
+    }
+
+    function cleanup($attrs) {
+        foreach ($attrs as $key => $attr) {
+            if (in_array($key, $this->transient)) {
+                unset($attrs[$key]);
+            }
+        }
+        return $attrs;
     }
 
     public function delete() {

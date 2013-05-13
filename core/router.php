@@ -45,7 +45,7 @@ class Router {
 			return new Route($request, $this->routes[$request->method()][$request->uri->pathinfo]);
 		}
 
-		return new Route($request);
+		return Route::instance($request);
 	}
 
 }

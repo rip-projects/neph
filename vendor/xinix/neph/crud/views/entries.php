@@ -14,11 +14,11 @@ use \Xinix\Neph\Grid\Grid;
 <div class="row-fluid grid-action">
     <div class="span6 pull-right">
         <div class="pull-right">
-            <a href="<?php echo URL::site('/'.$_response->uri->segments[1].'/add') ?>" class="btn"><?php echo l('Add') ?></a>
+            <a href="<?php echo URL::site('/'.$_response->uri->segments[1].'/add') ?>" class="btn"><i class="icon-add"></i> <?php echo l('Add') ?></a>
         </div>
     </div>
     <div class="span6">
-        <a href="<?php echo URL::site('/'.$_response->uri->segments[1].'/delete') ?>" class="btn" data-action="delete" data-grid="#<?php echo $grid->id ?>"><?php echo l('Delete') ?></a>
+        <a href="<?php echo URL::site('/'.$_response->uri->segments[1].'/delete') ?>" class="btn btn-danger" data-action="delete" data-grid="#<?php echo $grid->id ?>"><i class="icon-trash icon-white"></i> <?php echo l('Delete') ?></a>
     </div>
 </div>
 

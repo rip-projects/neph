@@ -4,6 +4,8 @@ use \Neph\Core\Controller;
 use \Neph\Core\DB;
 
 class Collection {
+    public static $model_base_class = '\\Neph\\Core\\DB\\ORM\\Model';
+
     protected $name = '';
     protected $class = '';
     protected $proto;
@@ -20,7 +22,7 @@ class Collection {
         $this->class = Controller::get_class($this->name, '', 'model');
 
         if (empty($this->class)) {
-            $this->class = '\\Neph\\Core\\DB\\ORM\\Model';
+            $this->class = static::$model_base_class;
         }
 
         $class = $this->class;
@@ -74,7 +76,7 @@ class Collection {
     }
 
     function prototype($attributes = '', $options = array()) {
-        if ($this->class == '\\Neph\\Core\\DB\\ORM\\Model' && empty($options['table'])) {
+        if ($this->class == static::$model_base_class && empty($options['table'])) {
             $options['name'] = $this->name;
         }
         return new $this->class($attributes, $options);

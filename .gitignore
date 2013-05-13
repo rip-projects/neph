@@ -1,4 +1,4 @@
 storage/logs/*.log
 /config.php
-/sites/ROOT
-/sites/expensedia
+/sites/*
+!/sites/ROOT.orig

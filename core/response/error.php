@@ -23,6 +23,9 @@ class Error extends Response {
 			}
 			return;
 		} else {
+			while (ob_get_level() > 0) {
+	      		ob_end_clean();
+	   		}
 			$this->content = View::instance('/error/'.$this->status)->render((array) $this);
 		}
 		return $this->content;

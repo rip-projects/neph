@@ -170,3 +170,35 @@ function with($object) {
 function is_class_of($a, $b) {
     return $a == $b || is_subclass_of($a, $b);
 }
+
+function get($obj, $key, $def = '') {
+    if (empty($obj)) return $def;
+
+    $exploded = explode('.', $key, 2);
+    if (is_object($obj)) {
+        if (method_exists($obj, 'get')) {
+            if ($key == 'children') {
+                $v = $obj->children();
+            } else {
+                $v = $obj->get($exploded[0]);
+            }
+            if (empty($v)) return $def;
+            return (empty($exploded[1])) ? $v : get($v, $exploded[1]);
+        } else {
+            if (empty($obj->{$exploded[0]})) return $def;
+            return (empty($exploded[1])) ? $obj->{$exploded[0]} : get($obj->{$exploded[0]}, $exploded[1]);
+        }
+    } elseif (is_array($obj)) {
+        if (empty($obj[$exploded[0]])) return $def;
+        return (empty($exploded[1])) ? $obj[$exploded[0]] : get($obj[$exploded[0]], $exploded[1]);
+    }
+    return $def;
+}
+
+function to_json($obj) {
+    if (is_object($obj) && method_exists($obj, 'to_array')) {
+        return json_encode($obj->to_array(), JSON_PRETTY_PRINT);
+    }
+
+    return json_encode($obj, JSON_PRETTY_PRINT);
+}

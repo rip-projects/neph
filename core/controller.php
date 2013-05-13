@@ -27,15 +27,16 @@ class Controller {
 
 		}
 
-		if (is_readable($f = Neph::path('site').Neph::site().'/modules/'.$module.'/'.$short_class_name.'.php') && require $f) {
-			static::$dependencies = array_merge(static::$dependencies, array($module => Neph::path('site').Neph::site().'/modules/'.$module.'/'));
+		if (is_readable($f = Neph::path('site').Neph::site().'/modules/'.$module.'/'.$short_class_name.'.php')) {
+			static::$dependencies = array_merge(array($module => Neph::path('site').Neph::site().'/modules/'.$module.'/'), static::$dependencies);
+			require $f;
 			return $short_class_name;
 		}
 
 		if (in_array($class_type, array('controller', 'model'))) {
 			if ($full_class_name = Config::get('config.default_'.$class_type)) {
 				if ($class_type == 'controller') {
-					static::$dependencies[$module] = Neph::path('site').Neph::site().'/modules/'.$module.'/';
+					static::$dependencies = array_merge(array($module => Neph::path('site').Neph::site().'/modules/'.$module.'/'), static::$dependencies);
 				}
 				return $full_class_name;
 			}
@@ -82,7 +83,7 @@ class Controller {
 	}
 
 	protected function authorized() {
-        if (Auth::check()) {
+        if (Auth::excluded(Request::instance()->uri->pathinfo) || Auth::check()) {
         	return true;
         }
 

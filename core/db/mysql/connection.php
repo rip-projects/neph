@@ -43,13 +43,32 @@ class Connection extends \Neph\Core\DB\Connection {
 				$c1 = array();
 				$c1['type'] = $this->get_type($col);
 
-				$t = explode('(', $col->type);
-				$c1['dbtype'] = $t[0];
-				$c1['length'] = (empty($t[1])) ? NULL : substr($t[1], 0, count($t[1]) - 2);
+                $t = explode('(', $col->type);
+                $c1['dbtype'] = $t[0];
 
-				if ($c1['type'] == 'integer' && $auto_increment = preg_match('/auto_increment/', $col->extra)) {
-					$c1['auto_increment'] = $auto_increment;
-				}
+                if ($c1['type'] == 'integer' && $auto_increment = preg_match('/auto_increment/', $col->extra)) {
+                    $c1['auto_increment'] = $auto_increment;
+                } elseif ($col->null == 'NO') {
+                    $c1['filter'][] = 'required';
+                    if (!in_array($c1['type'], array('string', 'text', 'password'))) {
+                        $c1['filter'][] = $c1['type'];
+                    }
+                }
+
+
+                if (!empty($t[1]) && in_array($c1['type'], array('string', 'text', 'password'))) {
+                    $c1['length'] = substr($t[1], 0, count($t[1]) - 2);
+                    $c1['filter'][] = 'max:'.$c1['length'];
+                }
+
+                if ($col->key == 'UNI') {
+                    $c1['unique'] = true;
+                    $c1['filter'][] = 'unique:'.$table;
+                }
+
+                if (isset($c1['filter'])) {
+                    $c1['filter'] = implode('|', $c1['filter']);
+                }
 
 				$c[$col->field] = $c1;
 			}
@@ -59,6 +78,7 @@ class Connection extends \Neph\Core\DB\Connection {
 	}
 
 	function get_type($col) {
+        if ($col->field == 'password') return 'password';
         if (stripos($col->type, 'int') !== FALSE) {
             return 'integer';
         } elseif (stripos($col->type, 'double') !== FALSE) {

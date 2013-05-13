@@ -5,18 +5,27 @@ use \Neph\Core\Lang;
 use \Neph\Core\String;
 
 class Filter {
-    static $instance;
+    protected static $registries = array();
+
     protected $rules = array();
     protected $aliases = array();
+    protected $context;
+
     public $errors;
 
-    static function instance($rules = '') {
-        if ($rules === '') return static::$instance;
+    // static function instance($rules = '') {
+    //     if ($rules === '') return static::$instance;
 
-        return static::$instance = new static($rules);
+    //     return static::$instance = new static($rules);
+    // }
+
+    static function register($key, $fn) {
+        static::$registries[$key] = $fn;
     }
 
-    function __construct($rules) {
+    function __construct($rules, $context = '') {
+        $this->context = $context;
+
         $new_rules = array();
 
         foreach ($rules as $key => $rule) {
@@ -31,10 +40,18 @@ class Filter {
         $this->rules = $new_rules;
     }
 
-    function valid(&$attrs) {
+    function valid(&$attrs = '') {
+        $def = false;
+        if ($attrs === '') {
+            $def = true;
+            $attrs = Request::instance()->data();
+        }
         $this->errors = new FilterErrors();
         foreach ($this->rules as $key => $rules) {
             $this->check($key, $rules, $attrs);
+        }
+        if ($def) {
+            Request::instance()->set_data($attrs);
         }
         return ($this->errors->count() == 0);
     }
@@ -46,8 +63,20 @@ class Filter {
         foreach ($rules as $rule) {
             list($rule, $parameters) = $this->parse($rule);
             try {
+                $done = false;
                 $old_value = $value;
-                $result = $this->{'filter_'.$rule}($key, $value, $attrs, $parameters, $this);
+                if (isset(static::$registries[$rule])) {
+                    $method = static::$registries[$rule];
+                    $result = $method($key, $value, $attrs, $parameters, $this);
+                    $done = true;
+                }
+
+                $method = 'filter_'.$rule;
+                if (!$done && method_exists($this, $method)) {
+                    $result = $this->$method($key, $value, $attrs, $parameters, $this);
+                } else {
+                    throw new \Exception('Filter ['.$rule.'] not found!');
+                }
                 if ($result instanceof \Exception) {
                     $error = $result;
                 }
@@ -58,6 +87,7 @@ class Filter {
 
             if ($error) {
                 $this->errors->add($key, $this->message($key, $rule, $error));
+                return;
             }
         }
     }
@@ -86,9 +116,60 @@ class Filter {
         $value = trim($value);
     }
 
+    function filter_unique($key, $value, $attrs, $parameters) {
+        if ($this->context) {
+            $q = $this->context->collection()
+                ->where($key, '=', $value);
+
+            if ($this->context->exists()) {
+                $q->where('id', '!=', $this->context->get('id'));
+            }
+
+            $entries = $q->get();
+            if (count($entries) > 0) {
+                throw FilterError::instance(array($this->aliases[$key]));
+            }
+            return;
+        }
+
+        if (empty($parameters[0])) {
+            throw new \Exception('Table name should be provided for unique filter');
+        }
+
+        throw new \Exception('No context for filter is not implemented yet');
+    }
+
+    function filter_max($key, $value, $attrs, $parameters) {
+        if (strlen($value) > $parameters[0]) {
+            throw FilterError::instance(array($this->aliases[$key], $parameters[0]));
+        }
+    }
+
     function filter_required($key, $value) {
         if (empty($value)) {
             throw FilterError::instance(array($this->aliases[$key]));
+        }
+    }
+
+    function filter_normalize_empty($key, &$value) {
+        if (is_array($value)) {
+            foreach ($value as $key => $val) {
+                if (empty($val)) unset($value[$key]);
+            }
+        }
+    }
+
+    function filter_integer($key, $value) {
+        if (filter_var($value, FILTER_VALIDATE_INT) === false) throw FilterError::instance(array($this->aliases[$key]));
+    }
+
+    function filter_datetime($key, $value) {
+        if (!$value instanceof \DateTime) throw FilterError::instance(array($this->aliases[$key]));
+    }
+
+    function filter_match($key, $value, $attrs, $parameters) {
+        if ($value != get($attrs, $parameters[0])) {
+            throw FilterError::instance(array($this->aliases[$key], $this->aliases[$parameters[0]]));
         }
     }
 

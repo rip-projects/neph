@@ -10,6 +10,8 @@ class Grid {
     public $show_tree = false;
     public $actions = array();
 
+    protected $registries = array();
+
     function __construct($config = '') {
         if (!empty($config)) {
             foreach($config as $k => $v) {
@@ -17,7 +19,7 @@ class Grid {
             }
         }
 
-        $this->id = uniqid('grid-');
+        $this->id = uniqid('crud-');
     }
 
     function show($entries) {
@@ -37,14 +39,24 @@ class Grid {
     }
 
     function format($value, $key, $entry) {
-        $formatter = (isset($this->meta[$key]['format'])) ? $this->meta[$key]['format'] : null;
+        if (method_exists($this, 'format_'.get($this->meta, $key.'.type'))) {
+            $formatter = array($this, 'format_'.get($this->meta, $key.'.type'));
+        } else {
+            $formatter = get($this->meta, $key.'.format');
+        }
+
         if (isset($formatter)) {
             if (is_callable($formatter)) {
                 return $formatter($value, $key, $entry);
             } elseif (function_exists($formatter)) {
-                return $formatter($value, $key, $entry);
+                return call_user_func_array($formatter, array($value, $key, $entry));
             }
         }
         return $value;
     }
+
+    function format_decimal($value) {
+        return number_format(doubleval($value));
+    }
+
 }
