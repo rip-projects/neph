@@ -34,6 +34,7 @@ class Database extends Driver {
                     ->or_where('email', '=', $arguments['login']);
             })
             ->where('password', '=', $arguments['password'])->get();
+
         if (!empty($result)) {
             $user = $result[0]->to_array();
             return $this->login($user['id'], array_get($arguments, 'remember'));

@@ -10,11 +10,11 @@ use \Xinix\Neph\Filter\Filter;
 use \Xinix\Neph\Message\Message;
 
 class Model {
-    protected $connection;
+    public $connection = '';
+    public $alias;
+
     protected $key = 'id';
     protected $name;
-    protected $table;
-    protected $collection;
     protected $columns;
     protected $hidden = array();
     protected $transient = array();
@@ -37,23 +37,29 @@ class Model {
         $this->options = (empty($options)) ? array() : (array) $options;
 
         if (isset($options['name'])) $this->name = $this->options['name'];
-        if (isset($options['table'])) $this->table = $this->options['table'];
+        if (isset($options['alias'])) $this->alias = $this->options['alias'];
         if (isset($options['key'])) $this->key = $this->options['key'];
-        if (isset($options['connection'])) $this->connection = $this->options['connection'];
         if (isset($options['exists'])) $this->exists = $this->options['exists'];
-
-        $this->original = $this->attributes = $attributes;
 
         if (!isset($this->name)) {
             $this->name = strtolower(class_basename($this));
         }
 
-        if (!isset($this->table)) {
-            $this->table = $this->name;
+        if (!isset($this->alias)) {
+            $this->alias = $this->name;
         }
+
+        // after everything is ready, update the attributes
+        if (!empty($attributes)) {
+            $this->fill($attributes);
+        } else {
+            $this->attributes = $attributes;
+        }
+        $this->original = $this->attributes;
     }
 
     public function set($key, $value) {
+        $value = $this->collection()->inflate($key, $value);
         if (method_exists($this, $method = 'set_'.$key)) {
             $this->$method($value);
         } else {
@@ -70,10 +76,6 @@ class Model {
         }
     }
 
-    public function connection() {
-        return $this->connection;
-    }
-
     public function collection() {
         return IoC::resolve('orm.manager')->collection($this->name);
     }
@@ -83,23 +85,11 @@ class Model {
     }
 
     public function key($key_name = '') {
-        return (empty($key_name)) ? $this->key : ((empty($this->system_keys[$key_name])) ? '' : $this->system_keys[$key_name]);
+        return (empty($key_name)) ? $this->key : get($this->system_keys, $key_name);
     }
 
     public function columns() {
-        if (!isset($this->columns)) {
-            $this->columns = DB::connection($this->connection)->columns($this->table);
-
-            if (!$this->key('name')) {
-                $column_keys = array_keys($this->columns);
-                $this->system_keys['name'] = (isset($column_keys[1])) ? $column_keys[1] : $column_keys[0];
-            }
-
-            if (isset($this->columns[$this->system_keys['parent']])) {
-                $this->columns[$this->system_keys['parent']]['source'] = 'model:'.$this->name.':'.$this->key().':'.$this->key('name');
-            }
-        }
-        return $this->columns;
+        return $this->collection()->columns();
     }
 
     public function hidden() {
@@ -158,10 +148,13 @@ class Model {
             $this->attributes[$this->system_keys['updated_by']] = $user_id;
         }
 
+        // \Console::log($this->attributes);
+        // exit;
+
+        // FIXME should we validate first of cleanup first?
         if (!$this->valid()) {
             return 0;
         }
-
         $this->attributes = $this->cleanup($this->attributes);
 
         if ($this->exists) {
@@ -182,6 +175,7 @@ class Model {
         foreach ($attrs as $key => $attr) {
             if (in_array($key, $this->transient)) {
                 unset($attrs[$key]);
+                continue;
             }
         }
         return $attrs;

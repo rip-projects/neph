@@ -195,10 +195,25 @@ function get($obj, $key, $def = '') {
     return $def;
 }
 
-function to_json($obj) {
+function strip_model($obj) {
     if (is_object($obj) && method_exists($obj, 'to_array')) {
-        return json_encode($obj->to_array(), JSON_PRETTY_PRINT);
+        return $obj->to_array();
+    } elseif (is_array($obj)) {
+        $new_obj = array();
+
+        foreach ($obj as $key => $value) {
+            $new_obj[$key] = (is_object($value) && method_exists($value, 'to_array')) ? $value->to_array() : strip_model($value);
+        }
+
+        $obj = $new_obj;
     }
 
+    return (array) $obj;
+}
+
+function to_json($obj) {
+    $obj = strip_model($obj);
+
     return json_encode($obj, JSON_PRETTY_PRINT);
+
 }

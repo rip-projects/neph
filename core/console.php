@@ -21,10 +21,12 @@ class Console {
 		}
 
 		$line = '';
+
+		$line .= $severity.' '.$d.'';
+		$line .= str_replace(dirname(dirname($_SERVER['SCRIPT_FILENAME'])), '', $backtrace[1]['file']).':'.$backtrace[1]['line']."\n";
+
 		foreach($data as $k => $row) {
-			$line .= $severity.' '.$d.' ('.$k.') ';
-			$line .= str_replace(dirname(dirname($_SERVER['SCRIPT_FILENAME'])), '', $backtrace[1]['file']).':'.$backtrace[1]['line']."\n";
-			$line .= print_r($row, 1);
+			$line .= "#$k: ".print_r($row, 1);
 			$line .= "\n";
 		}
 

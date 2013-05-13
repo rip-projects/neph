@@ -7,8 +7,12 @@ class Collection {
     public static $model_base_class = '\\Neph\\Core\\DB\\ORM\\Model';
 
     protected $name = '';
+    protected $alias = '';
     protected $class = '';
+    protected $connection;
+
     protected $proto;
+    protected $columns;
 
     protected $table;
 
@@ -25,8 +29,12 @@ class Collection {
             $this->class = static::$model_base_class;
         }
 
-        $class = $this->class;
         $this->proto = $this->prototype();
+        $this->alias = ($this->proto->alias) ? $this->proto->alias : $this->name;
+    }
+
+    public function connection() {
+        return DB::connection($this->proto->connection);
     }
 
     protected function hydrate($result) {
@@ -44,23 +52,27 @@ class Collection {
 
     protected function table($new = false) {
         if (empty($this->table) || $new) {
-            $this->table = DB::connection($this->proto->connection())->table($this->name);
+            $this->table = $this->connection()->table($this->name);
         }
         return $this->table;
     }
 
-    function find($id, $columns = array('*'), $show_all = false) {
+    public function inflate($key, $value) {
+        return $this->connection()->grammar()->inflate($value, get($this->columns(), $key.'.type'));
+    }
+
+    public function find($id, $columns = array('*'), $show_all = false) {
         $this->table(true)->where($this->proto->key(), '=', $id)->take(1);
         $result = $this->get($columns, $show_all);
         if (!empty($result)) return $result[0];
     }
 
-    function all($columns = array('*'), $show_all = false) {
+    public function all($columns = array('*'), $show_all = false) {
         $this->table(true);
         return $this->get($columns, $show_all);
     }
 
-    function get($columns = array('*'), $show_all = false) {
+    public function get($columns = array('*'), $show_all = false) {
         $query = $this->table();
         if (!$show_all) {
             $query->where($this->proto->key('status'), '>', 0);
@@ -70,24 +82,42 @@ class Collection {
         return $this->hydrate($result);
     }
 
-    function root($columns = array('*'), $show_all = false) {
+    public function root($columns = array('*'), $show_all = false) {
         $this->table()->where($this->proto->key('parent'), '=', 0);
         return $this->get($columns, $show_all);
     }
 
-    function prototype($attributes = '', $options = array()) {
-        if ($this->class == static::$model_base_class && empty($options['table'])) {
+    public function prototype($attributes = '', $options = array()) {
+        // FIXME still confuse what did I want to achieve with this before, LoL
+        if ($this->class == static::$model_base_class && empty($options['alias'])) {
             $options['name'] = $this->name;
         }
         return new $this->class($attributes, $options);
     }
 
-    function hidden() {
+    public function hidden() {
         return $this->proto->hidden();
     }
 
-    function columns() {
-        return $this->proto->columns();
+    public function key($key_name = '') {
+        return $this->proto->key($key_name);
+    }
+
+    public function columns() {
+        if (!isset($this->columns)) {
+            $this->columns = $this->connection()->columns($this->alias);
+
+            $name = $this->key('name');
+            if (!$name) {
+                $column_keys = array_keys($this->columns);
+                $name = (isset($column_keys[1])) ? $column_keys[1] : $column_keys[0];
+            }
+
+            if (isset($this->columns[$this->key('parent')])) {
+                $this->columns[$this->key('parent')]['source'] = 'model:'.$this->name.':'.$this->key().':'.$name;
+            }
+        }
+        return $this->columns;
     }
 
     function __call($method, $parameters) {

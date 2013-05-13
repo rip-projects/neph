@@ -37,6 +37,9 @@ class Form {
 
     function input($column, $value, $attrs = array()) {
         $method = 'input_'.get($this->meta, $column.'.type', 'string');
+        if (!method_exists($this, $method)) {
+            $method = 'input_string';
+        }
         return $this->$method($column, $value, $attrs);
     }
 

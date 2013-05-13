@@ -61,20 +61,20 @@ class Neph {
 
 
 		// FIXME fix this exception handler for uncaught no module exist error
-		set_exception_handler(function($e) {
-			require_once Neph::path('sys').'error.php';
-			Error::exception($e);
-		});
+		// set_exception_handler(function($e) {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::exception($e);
+		// });
 
-		set_error_handler(function($code, $error, $file, $line) {
-			require_once Neph::path('sys').'error.php';
-			Error::native($code, $error, $file, $line);
-		});
+		// set_error_handler(function($code, $error, $file, $line) {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::native($code, $error, $file, $line);
+		// });
 
-		register_shutdown_function(function() {
-			require_once Neph::path('sys').'error.php';
-			Error::shutdown();
-		});
+		// register_shutdown_function(function() {
+		// 	require_once Neph::path('sys').'error.php';
+		// 	Error::shutdown();
+		// });
 
 
 		Loader::directories(Neph::path('vendor'));

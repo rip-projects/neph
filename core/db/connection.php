@@ -15,6 +15,7 @@ abstract class Connection {
 
     var $config;
     protected $connection;
+    protected $grammar;
 
     protected $options = array(
         PDO::ATTR_CASE => PDO::CASE_LOWER,
@@ -41,7 +42,7 @@ abstract class Connection {
         return new Query($this, $this->grammar(), $table);
     }
 
-    protected function grammar() {
+    public function grammar() {
         if (isset($this->grammar)) return $this->grammar;
 
         $grammar_class = Config::get('db.drivers.'.$this->config['driver'], '\\Neph\\Core\\DB\\'.$this->config['driver']).'\\Grammar';
