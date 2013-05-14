@@ -3,6 +3,7 @@
 class Error {
 	public static function exception($exception, $trace = true) {
 		$response = Response::error(500, null, array('exception' => $exception));
+		$response->render();
 		$response->send();
 		exit(1);
 	}
@@ -18,6 +19,7 @@ class Error {
 			);
 		if ( ! is_null($errorO)) {
 			$response = Response::error(500, null, array('error' => $errorO));
+			$response->render();
 			$response->send();
 			exit(1);
 		}
@@ -28,6 +30,7 @@ class Error {
 
 		if ( ! is_null($error)) {
 			$response = Response::error(500, null, array('error' => $error));
+			$response->render();
 			$response->send();
 			exit(1);
 		}

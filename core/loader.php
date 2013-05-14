@@ -43,9 +43,11 @@ class Loader {
 
 		foreach ((array) static::$directories as $directory) {
 			if (is_readable($path = $directory.$file.'.php')) {
-				if (require $path) {
+				if (is_readable($path)) {
 					static::$dependencies[$class_name] = $directory.$dirpath;
-					return $directory.$dirpath;
+					if (require $path) {
+						return $directory.$dirpath;
+					}
 				}
 				return;
 			}

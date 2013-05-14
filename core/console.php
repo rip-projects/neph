@@ -21,15 +21,17 @@ class Console {
 		}
 
 		$line = '';
+
+		$line .= $severity.' '.$d.'';
+		$line .= str_replace(dirname(dirname($_SERVER['SCRIPT_FILENAME'])), '.', $backtrace[1]['file']).':'.$backtrace[1]['line']."\n";
+
 		foreach($data as $k => $row) {
-			$line .= $severity.' '.$d.' ('.$k.') ';
-			$line .= str_replace(dirname(dirname($_SERVER['SCRIPT_FILENAME'])), '', $backtrace[1]['file']).':'.$backtrace[1]['line']."\n";
-			$line .= print_r($row, 1);
+			$line .= "#$k: ".print_r($row, 1);
 			$line .= "\n";
 		}
 
 		if (static::$write) {
-			$log = Neph::path('storage').'logs/'.Neph::site().'-'.date('Ymd').'.log';
+			$log = Neph::path('storage').'logs/'.Neph::site().'-'.date('Ymd').(is_cli() ? '-cli' : '').'.log';
 			if (!file_exists(dirname($log))) mkdir(dirname($log), 0777, true);
 			$f = fopen($log, 'a');
 			fputs($f, $line);

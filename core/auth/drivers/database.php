@@ -13,7 +13,12 @@ class Database extends Driver {
     }
 
     public function retrieve($id) {
-        return $this->collection()->find($id);
+        if (empty($id)) return null;
+        try {
+            return $this->collection()->find($id);
+        } catch(\Exception $e) {
+            throw new \Exception('Cannot retrieve user from collection, check if table exists');
+        }
     }
 
     /**

@@ -142,4 +142,8 @@ class Payload {
 		Cookie::put($this->config['cookie'], $this->session['id'], $minutes, $this->config['path'], $this->config['domain'], $this->config['secure']);
 	}
 
+	public function config() {
+		return $this->config;
+	}
+
 }

@@ -25,6 +25,13 @@ class FilterErrors {
         }
     }
 
+    function get($key = ':all:') {
+        if ($key == ':all:') {
+            return $this->messages;
+        }
+        return (empty($this->messages[$key])) ? array() : $this->messages[$key];
+    }
+
     function format() {
         $messages = $this->all();
         if (count($messages) > 0) {

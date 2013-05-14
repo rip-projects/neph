@@ -16,16 +16,6 @@ use \Neph\Core\String;
 				<?php endif ?>
 			</tr>
 
-			<!--
-			<tr class="filter">
-				<?php foreach($self->columns as $column): ?>
-				<?php if (!in_array($column, $self->hidden)): ?>
-				<th><input type="text" name="<?php echo $column ?>" style="width: 100%" /></th>
-				<?php endif ?>
-				<?php endforeach ?>
-			</tr>
-			-->
-
 		</thead>
 		<tbody>
 			<?php if (!empty($entries)): ?>
