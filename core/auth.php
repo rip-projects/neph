@@ -26,6 +26,10 @@ class Auth {
         }
     }
 
+    public static function loaded() {
+        return !empty(static::$drivers);
+    }
+
     /**
      * Get an authentication driver instance.
      *
@@ -87,8 +91,7 @@ class Auth {
      *      Auth::check();
      * </code>
      */
-    public static function __callStatic($method, $parameters)
-    {
+    public static function __callStatic($method, $parameters) {
         return call_user_func_array(array(static::driver(), $method), $parameters);
     }
 

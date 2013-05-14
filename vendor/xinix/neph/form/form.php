@@ -9,6 +9,8 @@ class Form {
     public $show_tree = false;
     public $actions = array();
 
+    public $template;
+
     function __construct($config = '') {
         if (!empty($config)) {
             foreach($config as $k => $v) {
@@ -16,41 +18,49 @@ class Form {
             }
         }
 
+        $this->template = 'file://'.__DIR__.'/views/show.php';
+
         $this->id = uniqid('grid-');
     }
 
     function show($entry = array(), $readonly = false) {
-        return View::instance('file://'.__DIR__.'/views/show.php')->render(array(
+        return View::instance($this->template)->render(array(
             'self' => $this,
-            'entry' => (is_a($entry, '\\Neph\\Core\\DB\\ORM\\Model')) ? $entry->to_array() : (array) $entry,
+            'entry' => $entry,
             'readonly' => $readonly,
             ));
     }
 
     function text($column, $value, $attrs = array()) {
+        $formatter = get($this->meta, $column.'.format');
+        if ($formatter) {
+            return $formatter($column, $value, $attrs);
+        }
         return '<span class="'.$attrs['class'].'">'.$value.'</span>';
     }
 
     function input($column, $value, $attrs = array()) {
-        $meta_column = $this->meta[$column];
-
-        if ($column == 'password') {
-            return $this->input_password($column, $value, $attrs);
+        $formatter = get($this->meta, $column.'.format');
+        if ($formatter) {
+            return $formatter($column, $value, $attrs);
         }
-        switch($meta_column['type']) {
-            case 'integer':
-                return $this->input_integer($column, $value, $attrs);
-            case 'string':
-                return $this->input_string($column, $value, $attrs);
-            case 'text':
-                return $this->input_text($column, $value, $attrs);
+        $method = 'input_'.get($this->meta, $column.'.type', 'string');
+        if (!method_exists($this, $method)) {
+            $method = 'input_string';
         }
-
-        return $this->input_string($column, $value, $attrs);
+        return $this->$method($column, $value, $attrs);
     }
 
     function input_password($column, $value, $attrs = array()) {
-        return '<input type="password" name="'.$column.'" value="'.$value.'" class="'.$attrs['class'].'" />';
+        return '<input type="password" name="'.$column.'" class="'.$attrs['class'].'" />';
+    }
+
+    function input_boolean($column, $value, $attrs = array()) {
+        return '<select name="'.$column.'" class="'.$attrs['class'].'">
+            <option value="" '.($value === '' ? 'selected' : '').'></option>
+            <option value="0" '.($value === '0' ? 'selected' : '').'>False</option>
+            <option value="1" '.($value === '1' ? 'selected' : '').'>True</option>
+            </select>';
     }
 
     function input_integer($column, $value, $attrs = array()) {

@@ -1,6 +1,7 @@
 <?php namespace Neph\Core\Router;
 
 use \Neph\Core\Router;
+use \Neph\Core\Config;
 use \Neph\Core\Request;
 use \Neph\Core\Response;
 use \Neph\Core\Controller;
@@ -50,6 +51,19 @@ class Route {
         Router::instance()->register('PUT', $route, $action);
     }
 
+    public static function instance() {
+        // forward to default route if non standard MVC accepted pathinfo
+        if (Request::instance()->uri->pathinfo === '/') {
+            Request::instance()->forward(Config::get('config.default_route', '/home'));
+            return Router::instance()->route();
+        } elseif (empty(Request::instance()->uri->segments[2])) {
+            Request::instance()->forward('/'.Request::instance()->uri->segments[1].'/index');
+            return Router::instance()->route();
+        }
+
+        return new static(Request::instance());
+    }
+
     /**
      * Register a DELETE route with the router.
      *
@@ -69,8 +83,7 @@ class Route {
      * @param  mixed         $action
      * @return void
      */
-    public static function any($route, $action)
-    {
+    public static function any($route, $action) {
         Router::instance()->register('*', $route, $action);
     }
 
@@ -85,22 +98,21 @@ class Route {
             $this->action = $action;
         }
 
-        if ($this->action === '') {
-            // forward to default route if non standard MVC accepted pathinfo
-            if ($this->request->uri->pathinfo === '/') {
-                Request::instance()->forward('/home/index');
-            } elseif (empty($this->request->uri->segments[2])) {
-                Request::instance()->forward('/'.$this->request->uri->segments[1].'/index');
-            }
-
+        if ($action == '') {
             try {
-                $controller = Controller::load($this->request->uri->segments[1]);
+                $controller = Controller::load(Request::instance()->uri->segments[1]);
             } catch(\Neph\Core\LoaderException $e) {
                 $controller = null;
             } catch(\Exception $e) {
-                return Response::error(500, $e->getMessage(), array('exception' => $e));
+                throw $e;
             }
+
             $this->delegation = $controller;
+
+            $view = Controller::get_resource_file('/views/'.Request::instance()->uri->segments[2].'.php');
+            if (!empty($view)) {
+                $this->view = '/'. $this->request->uri->segments[2];
+            }
         }
     }
 
@@ -122,12 +134,6 @@ class Route {
 
     function response() {
         if ($this->delegation) {
-
-            $view = Controller::get_resource_file('/views/'.$this->request->uri->segments[2].'.php');
-            if (!empty($view)) {
-                $this->view = '/'. $this->request->uri->segments[2];
-            }
-            // Controller::get_resource_file('/views'.$this->view.'.php')
 
             $params = array_slice($this->request->uri->segments, 3);
 

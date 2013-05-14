@@ -1,6 +1,28 @@
-<?php namespace Xinix\Neph\Crud;
+<?php
+
+/**
+ * crud_controller.php
+ *
+ * @package     xinix/neph/crud
+ * @author      jafar <jafar@xinix.co.id>
+ * @copyright   Copyright(c) 2013 PT Sagara Xinix Solusitama.  All Rights Reserved.
+ *
+ * Created on 2013/05/10 14:00:00
+ *
+ * This software is the proprietary information of PT Sagara Xinix Solusitama.
+ *
+ * History
+ * =======
+ * (dd/mm/yyyy hh:mm:ss) (author)
+ * 2013/05/10 14:00:00   jafar <jafar@xinix.co.id>
+ *
+ *
+ */
+
+namespace Xinix\Neph\Crud;
 
 use \Neph\Core\Response;
+use \Neph\Core\Config;
 use \Neph\Core\IoC;
 use \Neph\Core\Router\Route;
 use \Neph\Core\DB;
@@ -14,23 +36,19 @@ use \Xinix\Neph\Grid\Grid;
 use \Xinix\Neph\Form\Form;
 
 
+/**
+ * Base class for scaffolded data resource.
+ * Create (add), Read (entries list, entry detail), Update (edit), Delete
+ * (delete) generated.
+ */
 class Crud_Controller extends Controller {
-
-    protected $hidden = array(
-        'id',
-        'x_position',
-        'x_status',
-        'x_created_by',
-        'x_created_time',
-        'x_updated_by',
-        'x_updated_time'
-    );
 
     protected $name;
     protected $collection;
     protected $grid_config;
     protected $form_config;
     protected $filters = array();
+    protected $options = array();
 
     public function __construct() {
         parent::__construct();
@@ -45,6 +63,8 @@ class Crud_Controller extends Controller {
 
         if (DB::check($this->name)) {
             $this->collection = IoC::resolve('orm.manager')->collection($this->name);
+        } else {
+            throw new \Exception('No "'.$this->name.'" table available');
         }
 
         $self = $this;
@@ -64,15 +84,12 @@ class Crud_Controller extends Controller {
                 $fn = strtolower(Request::instance()->method()).'_'.Request::instance()->uri->segments[2];
                 $filter = (isset($filters[$fn])) ? $filters[$fn] : null;
                 if ($filter) {
-                    $data = Request::data();
-                    $filter_o = Filter::instance($filter);
-                    $pass = $filter_o->valid($data);
-                    Request::set_data($data);
-
+                    $filter_o = new Filter($filter);
+                    $pass = $filter_o->valid();
                     if (!$pass) {
                         Message::error($filter_o->errors->format());
                         return array(
-                            'data' => $data,
+                            'data' => Request::instance()->data(),
                         );
                     }
                 }
@@ -86,9 +103,19 @@ class Crud_Controller extends Controller {
 
     protected function grid_config() {
         if (!isset($this->grid_config)) {
-            $meta = $this->collection->columns();
+            $hidden = Config::get('crud.controller.hidden_on_grid', array(
+                'id',
+                'position',
+                'parent',
+                'status',
+                'created_by',
+                'created_time',
+                'updated_by',
+                'updated_time'
+            ));
+            $meta = $this->collection->column();
             $this->grid_config = array(
-                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'columns' => array_diff(array_keys($meta), $hidden),
                 'meta' => $meta,
                 'actions' => array(
                     'edit' => '/'.$this->name.'/edit',
@@ -102,9 +129,18 @@ class Crud_Controller extends Controller {
 
     protected function form_config() {
         if (!isset($this->form_config)) {
-            $meta = $this->collection->columns();
+            $hidden = Config::get('crud.controller.hidden_on_form', array(
+                'id',
+                'position',
+                'status',
+                'created_by',
+                'created_time',
+                'updated_by',
+                'updated_time'
+            ));
+            $meta = $this->collection->column();
             $this->form_config = array(
-                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'columns' => array_diff(array_keys($meta), $hidden),
                 'meta' => $meta,
                 'actions' => array(
                     'edit' => '/'.$this->name.'/edit',
@@ -148,23 +184,35 @@ class Crud_Controller extends Controller {
     }
 
     public function get_entry($id) {
+        $form = new Form($this->form_config());
+        if ($filename = Controller::get_resource_file('/views/_form.php')) {
+            $form->template = 'file://'.$filename;
+        }
         return array(
             'publish' => $this->collection->find($id),
-            'form' => new Form($this->form_config()),
+            'form' => $form,
         );
     }
 
     public function get_add() {
+        $form = new Form($this->form_config());
+        if ($filename = Controller::get_resource_file('/views/_form.php')) {
+            $form->template = 'file://'.$filename;
+        }
         $data = array(
-            'form' => new Form($this->form_config()),
+            'form' => $form,
         );
         return $data;
     }
 
     public function get_edit($id) {
+        $form = new Form($this->form_config());
+        if ($filename = Controller::get_resource_file('/views/_form.php')) {
+            $form->template = 'file://'.$filename;
+        }
         $data = array(
             'data' => $this->collection->find($id),
-            'form' => new Form($this->form_config()),
+            'form' => $form,
         );
         return $data;
     }
@@ -196,12 +244,7 @@ class Crud_Controller extends Controller {
         if (!Request::instance()->is_rest() && !empty($config['show_tree'])) {
             $data['publish']['entries'] = $this->collection->root();
         } else {
-            $results = $this->collection->filter_query($_GET)->get();
-            $entries = array();
-            foreach ($results as $key => $row) {
-                $entries[] = $row->to_array();
-            }
-            $data['publish']['entries'] = $entries;
+            $data['publish']['entries'] = $this->collection->filter_query($_GET)->get();
         }
 
         $data['grid'] = new Grid($this->grid_config());
@@ -211,15 +254,29 @@ class Crud_Controller extends Controller {
     public function post_add() {
 
         $entry = $this->collection->prototype(Request::instance()->data());
-        $entry->save();
-
-        Message::success('Record added.');
-
-        if (Request::instance()->is_rest()) {
-            return Response::redirect('/'.$this->name.'/'.$entry->get('id'));
+        $result = $entry->save();
+        if ($result) {
+            Message::success('Record added.');
+            if (Request::instance()->is_rest()) {
+                return Response::redirect('/'.$this->name.'/'.$entry->get('id'));
+            } else {
+                return $this->route_post_save($entry);
+            }
         } else {
-            return Response::redirect('/'.$this->name.'/entry/'.$entry->get('id'));
+            $form = new Form($this->form_config());
+            if ($filename = Controller::get_resource_file('/views/_form.php')) {
+                $form->template = 'file://'.$filename;
+            }
+            return array(
+                'data' => Request::instance()->data(),
+                'form' => $form,
+            );
         }
+
+    }
+
+    public function route_post_save($entry) {
+        return Response::redirect('/'.$this->name.'/entries');
     }
 
     public function post_edit($id) {
@@ -233,12 +290,18 @@ class Crud_Controller extends Controller {
 
         Message::success(($result) ? 'Record updated.' : 'No update for same record.');
 
-        if (Request::instance()->is_rest()) {
-            return Response::redirect('/'.$this->name.'/'.$id);
-        } elseif ($result) {
-            return Response::redirect('/'.$this->name.'/entry/'.$id);
+        if ($result) {
+            if (Request::instance()->is_rest()) {
+                return Response::redirect('/'.$this->name.'/'.$id);
+            } else {
+                return $this->route_post_save($entry);
+            }
         } else {
-            return Response::redirect('/'.$this->name.'/edit/'.$id);
+            if (Request::instance()->is_rest()) {
+                return array('error' => new \Exception('Error on save'));
+            } else {
+                return Response::redirect('/'.$this->name.'/edit/'.$id);
+            }
         }
     }
 }

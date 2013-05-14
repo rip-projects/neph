@@ -14,7 +14,7 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
 .grid-row-action {
     text-indent: 10000px;
     overflow: hidden;
-    border: 1px solid #ccc;
+    /*border: 1px solid #ccc;*/
     /*background-position: -360px -144px;*/
 }
 
@@ -90,5 +90,27 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
 td > input[type="text"] {
     width: 100%;
     min-width: 100%;
+    margin-bottom: 0;
 }
 
+
+.icon-delete {
+  background-position: -456px 0;
+}
+
+.icon-add {
+  background-position: -408px -96px;
+}
+
+.icon-fill {
+  background-position: -360px -96px;
+}
+
+.input-integer, .input-decimal {
+    text-align: right;
+}
+
+label.required:after {
+    content: '*';
+    color: red;
+}

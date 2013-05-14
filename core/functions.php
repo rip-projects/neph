@@ -41,6 +41,32 @@ function array_get($array, $key, $default = null)
     return $array;
 }
 
+/**
+ * Return the first element in an array which passes a given truth test.
+ *
+ * <code>
+ *      // Return the first array element that equals "Taylor"
+ *      $value = array_first($array, function($k, $v) {return $v == 'Taylor';});
+ *
+ *      // Return a default value if no matching element is found
+ *      $value = array_first($array, function($k, $v) {return $v == 'Taylor'}, 'Default');
+ * </code>
+ *
+ * @param  array    $array
+ * @param  Closure  $callback
+ * @param  mixed    $default
+ * @return mixed
+ */
+function array_first($array, $callback, $default = null)
+{
+    foreach ($array as $key => $value)
+    {
+        if (call_user_func($callback, $key, $value)) return $value;
+    }
+
+    return value($default);
+}
+
 function class_basename($class)
 {
     if (is_object($class)) $class = get_class($class);
@@ -169,4 +195,51 @@ function with($object) {
 
 function is_class_of($a, $b) {
     return $a == $b || is_subclass_of($a, $b);
+}
+
+function get($obj, $key, $def = '') {
+    if (empty($obj)) return $def;
+
+    $exploded = explode('.', $key, 2);
+    if (is_object($obj)) {
+        if (method_exists($obj, 'get')) {
+            if ($key == 'children') {
+                $v = $obj->children();
+            } else {
+                $v = $obj->get($exploded[0]);
+            }
+            if (!isset($v)) return $def;
+            return (empty($exploded[1])) ? $v : get($v, $exploded[1]);
+        } else {
+            if (!isset($obj->{$exploded[0]})) return $def;
+            return (empty($exploded[1])) ? $obj->{$exploded[0]} : get($obj->{$exploded[0]}, $exploded[1]);
+        }
+    } elseif (is_array($obj)) {
+        if (!isset($obj[$exploded[0]])) return $def;
+        return (empty($exploded[1])) ? $obj[$exploded[0]] : get($obj[$exploded[0]], $exploded[1]);
+    }
+    return $def;
+}
+
+function strip_model($obj) {
+    if (is_object($obj) && method_exists($obj, 'to_array')) {
+        return $obj->to_array();
+    } elseif (is_array($obj)) {
+        $new_obj = array();
+
+        foreach ($obj as $key => $value) {
+            $new_obj[$key] = (is_object($value) && method_exists($value, 'to_array')) ? $value->to_array() : strip_model($value);
+        }
+
+        $obj = $new_obj;
+    }
+
+    return (array) $obj;
+}
+
+function to_json($obj) {
+    $obj = strip_model($obj);
+
+    return json_encode($obj, JSON_PRETTY_PRINT);
+
 }

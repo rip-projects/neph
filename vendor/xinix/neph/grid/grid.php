@@ -3,6 +3,8 @@
 use \Neph\Core\View;
 
 class Grid {
+    static protected $registries = array();
+
     public $id;
     public $columns = array();
     public $meta = array();
@@ -17,7 +19,7 @@ class Grid {
             }
         }
 
-        $this->id = uniqid('grid-');
+        $this->id = uniqid('crud-');
     }
 
     function show($entries) {
@@ -37,14 +39,30 @@ class Grid {
     }
 
     function format($value, $key, $entry) {
-        $formatter = (isset($this->meta[$key]['format'])) ? $this->meta[$key]['format'] : null;
+        if (method_exists($this, 'format_'.get($this->meta, $key.'.type'))) {
+            $formatter = array($this, 'format_'.get($this->meta, $key.'.type'));
+        } else {
+            $formatter = get($this->meta, $key.'.format');
+        }
+
         if (isset($formatter)) {
             if (is_callable($formatter)) {
                 return $formatter($value, $key, $entry);
             } elseif (function_exists($formatter)) {
-                return $formatter($value, $key, $entry);
+                return call_user_func_array($formatter, array($value, $key, $entry));
             }
         }
         return $value;
     }
+
+    function format_decimal($value) {
+        return number_format(doubleval($value));
+    }
+
+    function format_boolean($value) {
+        if ($value === '0') return 'False';
+        elseif ($value === '1') return 'True';
+        else return '';
+    }
+
 }

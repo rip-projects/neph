@@ -13,7 +13,7 @@ class DB {
 
 		if (!isset(static::$connections[$connection])) {
 			$config = Config::get("db.connections.{$connection}");
-			if (!isset($config)) {
+			if (empty($config)) {
 				throw new \Exception("Database connection is not defined for [$connection].");
 			}
 
@@ -22,6 +22,7 @@ class DB {
 			static::$connections[$connection] = new $driver_class($config);
 			static::$connections[$connection]->connect();
 		}
+
 
 		return static::$connections[$connection];
 	}

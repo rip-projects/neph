@@ -1,6 +1,7 @@
 <?php namespace Neph\Core\Auth\Drivers;
 
 use \Neph\Core\Session;
+use \Neph\Core\Request;
 use \Neph\Core\Cookie;
 use \Neph\Core\Event;
 use \Neph\Core\Config;
@@ -48,6 +49,12 @@ abstract class Driver {
      */
     public function guest() {
         return ! $this->check();
+    }
+
+    public function excluded($uri) {
+        $excludes = Config::get('auth.excludes');
+        if (empty($excludes) || !in_array($uri, $excludes)) return false;
+        return true;
     }
 
     /**
@@ -179,9 +186,9 @@ abstract class Driver {
         // When setting the default implementation of an authentication
         // cookie we'll use the same settings as the session cookie.
         // This typically makes sense as they both are sensitive.
-        $config = Config::get('session');
+        // $config = Config::get('session');
 
-        extract($config);
+        extract(Session::$instance->config());
 
         Cookie::put($name, $value, $minutes, $path, $domain, $secure);
     }
