@@ -33,6 +33,21 @@ abstract class Connection {
     abstract public function check($table);
     abstract public function columns($table);
 
+    public function begin() {
+        $this->connection->beginTransaction();
+        return $this;
+    }
+
+    public function commit() {
+        $this->connection->commit();
+        return $this;
+    }
+
+    public function rollback() {
+        $this->connection->rollBack();
+        return $this;
+    }
+
     protected function options($config) {
         $options = (isset($config['options'])) ? $config['options'] : array();
         return $options + $this->options;
@@ -40,6 +55,33 @@ abstract class Connection {
 
     public function table($table) {
         return new Query($this, $this->grammar(), $table);
+    }
+
+    /**
+     * Execute a callback wrapped in a database transaction.
+     *
+     * @param  callback  $callback
+     * @return bool
+     */
+    public function transaction($callback)
+    {
+        $this->begin();
+
+        // After beginning the database transaction, we will call the callback
+        // so that it can do its database work. If an exception occurs we'll
+        // rollback the transaction and re-throw back to the developer.
+        try
+        {
+            call_user_func($callback);
+        }
+        catch (\Exception $e)
+        {
+            $this->rollback();
+
+            throw $e;
+        }
+
+        return $this->commit();
     }
 
     public function grammar() {

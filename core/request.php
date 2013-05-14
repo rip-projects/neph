@@ -37,7 +37,7 @@ class Request {
 	}
 
 	function method() {
-		return (is_cli()) ? 'GET' : $_SERVER['REQUEST_METHOD'];
+		return (is_cli()) ? 'CLI' : $_SERVER['REQUEST_METHOD'];
 	}
 
 	function cookie($key, $value = '__GET__') {
@@ -47,7 +47,9 @@ class Request {
 	}
 
 	function is_rest() {
-		if ($this->uri->extension == 'json') return true;
+		if (is_cli()) return false;
+		elseif ($this->uri->extension == 'json') return true;
+
 		$rest_content_types = array('application/json');
 		if (!empty($_SERVER['CONTENT_TYPE']) && in_array($_SERVER['CONTENT_TYPE'], $rest_content_types)) return true;
 		$accept = $this->accept();

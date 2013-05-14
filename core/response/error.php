@@ -2,6 +2,7 @@
 
 use \Neph\Core\Response;
 use \Neph\Core\View;
+use \Neph\Core\Console;
 
 class Error extends Response {
 	var $status;
@@ -16,16 +17,19 @@ class Error extends Response {
 	}
 
 	function render() {
+		while (ob_get_level() > 0) {
+      		ob_end_clean();
+   		}
 		if (is_cli()) {
+			ob_start();
 			Console::error($this->status.' '.$this->errors[0]);
 			if (isset($this->data['exception'])) {
 				Console::error($this->data['exception']->getMessage(), $this->data['exception']->getTraceAsString());
 			}
-			return;
+			echo "\n";
+			debug_print_backtrace();
+			$this->content = ob_get_clean();
 		} else {
-			while (ob_get_level() > 0) {
-	      		ob_end_clean();
-	   		}
 			$this->content = View::instance('/error/'.$this->status)->render((array) $this);
 		}
 		return $this->content;

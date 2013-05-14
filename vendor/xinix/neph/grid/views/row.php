@@ -12,7 +12,7 @@ use \Neph\Core\String;
             <?php $meta = get($self, 'meta.'.$column) ?>
             <div class="<?php echo (get($meta, 'alignment') || get($meta, 'type') == 'integer' || get($meta, 'type') == 'decimal') ? 'pull-right' : '' ?>">
                 <?php if ($self->show_tree && $i++ == 0): ?>
-                    <span class="level-<?php echo $level ?> <?php echo (empty($children)) ? 'level-leaf' : '' ?>"></span>
+                    <span class="level-<?php echo $level ?> <?php echo (!get($entry, 'children')) ? 'level-leaf' : '' ?>"></span>
                 <?php endif ?>
                 <?php echo $self->format(get($entry, $column), $column, $entry) ?>
             </div>

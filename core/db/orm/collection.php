@@ -4,6 +4,9 @@ use \Neph\Core\Controller;
 use \Neph\Core\DB;
 
 class Collection {
+    const COLUMN_KEYS = 1;
+    const COLUMN_VALUES = 2;
+
     public static $model_base_class = '\\Neph\\Core\\DB\\ORM\\Model';
 
     protected $name = '';
@@ -58,7 +61,7 @@ class Collection {
     }
 
     public function inflate($key, $value) {
-        return $this->connection()->grammar()->inflate($value, get($this->columns(), $key.'.type'));
+        return $this->connection()->grammar()->inflate($value, $this->column($key.'.type'));
     }
 
     public function find($id, $columns = array('*'), $show_all = false) {
@@ -103,9 +106,12 @@ class Collection {
         return $this->proto->key($key_name);
     }
 
-    public function columns() {
+    public function column($key = '', $type = 3) {
         if (!isset($this->columns)) {
-            $this->columns = $this->connection()->columns($this->alias);
+            $this->columns = ($this->proto->columns)
+                ? $this->proto->columns
+                : $this->connection()->columns($this->alias);
+            $this->proto->prepare_columns($this->columns);
 
             $name = $this->key('name');
             if (!$name) {
@@ -117,7 +123,16 @@ class Collection {
                 $this->columns[$this->key('parent')]['source'] = 'model:'.$this->name.':'.$this->key().':'.$name;
             }
         }
-        return $this->columns;
+
+        if (!empty($key)) {
+            return get($this->columns, $key);
+        } elseif ($type == 3) {
+            return $this->columns;
+        } elseif ($type == Collection::COLUMN_VALUES) {
+            return array_values($this->columns);
+        } elseif ($type == Collection::COLUMN_KEYS) {
+            return array_keys($this->columns);
+        }
     }
 
     function __call($method, $parameters) {

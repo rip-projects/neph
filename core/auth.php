@@ -26,6 +26,10 @@ class Auth {
         }
     }
 
+    public static function loaded() {
+        return !empty(static::$drivers);
+    }
+
     /**
      * Get an authentication driver instance.
      *

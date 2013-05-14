@@ -31,17 +31,23 @@ class Neph {
 			return static::$_site;
 		}
 
-		foreach($NEPH_CONFIG['sites'] as $url => $site) {
-			$pattern = '#'.$url.'#';
-			if (preg_match($pattern, full_url())) {
-				return static::$_site = $site;
+		if (!is_cli()) {
+			foreach($NEPH_CONFIG['sites'] as $url => $site) {
+				$pattern = '#'.$url.'#';
+				if (preg_match($pattern, full_url())) {
+					return static::$_site = $site;
+				}
 			}
+			return static::$_site = 'ROOT';
 		}
-		return static::$_site = 'ROOT';
+
+		return static::$_site = get($_SERVER, 'SITE', 'ROOT');
 	}
 
 	static function load() {
 		global $NEPH_CONFIG;
+
+
 		// error_reporting(0);
 
 		ob_start('mb_output_handler');
@@ -59,34 +65,40 @@ class Neph {
 		require Neph::path('sys').'loader.php';
 		spl_autoload_register(array('Neph\\Core\\Loader', 'load'));
 
+		if (is_cli()) {
+			echo static::site().': CLI sequence started at '.date('Y-m-d H:i:s', NEPH_START)."\n";
+		}
 
-		// FIXME fix this exception handler for uncaught no module exist error
-		// set_exception_handler(function($e) {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::exception($e);
-		// });
+		if (!NEPH_DEBUG) {
 
-		// set_error_handler(function($code, $error, $file, $line) {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::native($code, $error, $file, $line);
-		// });
+			// FIXME fix this exception handler for uncaught no module exist error
+			set_exception_handler(function($e) {
+				require_once Neph::path('sys').'error.php';
+				Error::exception($e);
+			});
 
-		// register_shutdown_function(function() {
-		// 	require_once Neph::path('sys').'error.php';
-		// 	Error::shutdown();
-		// });
+			set_error_handler(function($code, $error, $file, $line) {
+				require_once Neph::path('sys').'error.php';
+				Error::native($code, $error, $file, $line);
+			});
 
+			register_shutdown_function(function() {
+				require_once Neph::path('sys').'error.php';
+				Error::shutdown();
+			});
+
+		}
 
 		Loader::directories(Neph::path('vendor'));
 		Loader::namespaces(array('Neph\\Core' => Neph::path('sys')));
 
 		try {
 			// on response send try to save session
-			Event::on('response.send', function() {
-				if (!is_cli() && Config::get('session.default', '') !== '') {
+			if (!is_cli() && Config::get('session.default', '') !== '') {
+				Event::on('response.send', function() {
 					Session::save();
-				}
-			});
+				});
+			}
 
 			// initialize language
 			Lang::load();
@@ -103,7 +115,6 @@ class Neph {
 			if (is_readable($start_file)) {
 				include $start_file;
 			}
-
 
 			/**
 			 * starting the routing activity and get the default response from
@@ -126,7 +137,8 @@ class Neph {
 		$success = Response::$instance->send();
 
 		if (is_cli()) {
-			echo "\n";
+			$end = microtime(true);
+			echo static::site().": CLI sequence finished at ".date('Y-m-d H:i:s', $end).", elapsed time ".sprintf('%.3f', $end - NEPH_START)."s\n";
 		}
 
 		if (!$success) {

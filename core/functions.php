@@ -41,6 +41,32 @@ function array_get($array, $key, $default = null)
     return $array;
 }
 
+/**
+ * Return the first element in an array which passes a given truth test.
+ *
+ * <code>
+ *      // Return the first array element that equals "Taylor"
+ *      $value = array_first($array, function($k, $v) {return $v == 'Taylor';});
+ *
+ *      // Return a default value if no matching element is found
+ *      $value = array_first($array, function($k, $v) {return $v == 'Taylor'}, 'Default');
+ * </code>
+ *
+ * @param  array    $array
+ * @param  Closure  $callback
+ * @param  mixed    $default
+ * @return mixed
+ */
+function array_first($array, $callback, $default = null)
+{
+    foreach ($array as $key => $value)
+    {
+        if (call_user_func($callback, $key, $value)) return $value;
+    }
+
+    return value($default);
+}
+
 function class_basename($class)
 {
     if (is_object($class)) $class = get_class($class);
@@ -182,14 +208,14 @@ function get($obj, $key, $def = '') {
             } else {
                 $v = $obj->get($exploded[0]);
             }
-            if (empty($v)) return $def;
+            if (!isset($v)) return $def;
             return (empty($exploded[1])) ? $v : get($v, $exploded[1]);
         } else {
-            if (empty($obj->{$exploded[0]})) return $def;
+            if (!isset($obj->{$exploded[0]})) return $def;
             return (empty($exploded[1])) ? $obj->{$exploded[0]} : get($obj->{$exploded[0]}, $exploded[1]);
         }
     } elseif (is_array($obj)) {
-        if (empty($obj[$exploded[0]])) return $def;
+        if (!isset($obj[$exploded[0]])) return $def;
         return (empty($exploded[1])) ? $obj[$exploded[0]] : get($obj[$exploded[0]], $exploded[1]);
     }
     return $def;

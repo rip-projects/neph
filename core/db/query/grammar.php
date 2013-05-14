@@ -639,6 +639,10 @@ class Grammar {
 		return trim("DELETE FROM {$table} ".$this->wheres($query));
 	}
 
+	public function truncate(Query $query) {
+		return $this->delete($query);
+	}
+
 	/**
 	 * Transform an SQL short-cuts into real SQL for PDO.
 	 *

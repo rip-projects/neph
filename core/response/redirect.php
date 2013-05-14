@@ -15,14 +15,9 @@ class Redirect extends Response {
     }
 
     public function send() {
-        // Dump all output buffering, this ensures
-        // that symphony will send our redirect headers
-        // properly if we've outputted any content from
-        // within Laravel.
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
-
         return parent::send();
     }
 

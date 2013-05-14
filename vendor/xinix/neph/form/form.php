@@ -32,10 +32,18 @@ class Form {
     }
 
     function text($column, $value, $attrs = array()) {
+        $formatter = get($this->meta, $column.'.format');
+        if ($formatter) {
+            return $formatter($column, $value, $attrs);
+        }
         return '<span class="'.$attrs['class'].'">'.$value.'</span>';
     }
 
     function input($column, $value, $attrs = array()) {
+        $formatter = get($this->meta, $column.'.format');
+        if ($formatter) {
+            return $formatter($column, $value, $attrs);
+        }
         $method = 'input_'.get($this->meta, $column.'.type', 'string');
         if (!method_exists($this, $method)) {
             $method = 'input_string';
@@ -45,6 +53,14 @@ class Form {
 
     function input_password($column, $value, $attrs = array()) {
         return '<input type="password" name="'.$column.'" class="'.$attrs['class'].'" />';
+    }
+
+    function input_boolean($column, $value, $attrs = array()) {
+        return '<select name="'.$column.'" class="'.$attrs['class'].'">
+            <option value="" '.($value === '' ? 'selected' : '').'></option>
+            <option value="0" '.($value === '0' ? 'selected' : '').'>False</option>
+            <option value="1" '.($value === '1' ? 'selected' : '').'>True</option>
+            </select>';
     }
 
     function input_integer($column, $value, $attrs = array()) {

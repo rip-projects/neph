@@ -75,11 +75,13 @@ class Controller {
 	public function __construct() {
 		$self = $this;
 
-		Event::on('route.pre_call', function() use ($self) {
-			if (!$self->authorized()) {
-				return Response::redirect('/login');
-			}
-		});
+		if (Auth::loaded()) {
+			Event::on('route.pre_call', function() use ($self) {
+				if (!$self->authorized()) {
+					return Response::redirect('/login');
+				}
+			});
+		}
 	}
 
 	protected function authorized() {

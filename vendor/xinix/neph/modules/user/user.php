@@ -1,19 +1,31 @@
 <?php namespace Xinix\Neph\Modules\User;
 
-use Neph\Core\DB\ORM\Model;
+use \Xinix\Neph\CFieldModel\CFieldModel;
 
-class User extends Model {
-    var $transient = array(
+class User extends CFieldModel {
+    public $transient = array(
         'full_name',
         'password2',
     );
 
-    function columns() {
-        $columns = parent::columns();
+    public $custom = array(
+        'mail_notification',
+    );
+
+    function prepare_columns(&$columns) {
+        parent::prepare_columns($columns);
+        $password = $columns['password'];
+        unset($columns['password']);
+        $columns['password'] = $password;
         $columns['password2'] = array(
+            'type' => 'password',
             'filter' => 'required|match:password',
         );
-        return $columns;
+        $columns['mail_notification'] = array(
+            'type' => 'boolean',
+            'filter' => 'boolean',
+        );
+
     }
 
     function get_full_name() {

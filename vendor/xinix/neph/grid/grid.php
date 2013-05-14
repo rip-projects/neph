@@ -3,14 +3,14 @@
 use \Neph\Core\View;
 
 class Grid {
+    static protected $registries = array();
+
     public $id;
     public $columns = array();
     public $meta = array();
     public $show_checkbox = true;
     public $show_tree = false;
     public $actions = array();
-
-    protected $registries = array();
 
     function __construct($config = '') {
         if (!empty($config)) {
@@ -57,6 +57,12 @@ class Grid {
 
     function format_decimal($value) {
         return number_format(doubleval($value));
+    }
+
+    function format_boolean($value) {
+        if ($value === '0') return 'False';
+        elseif ($value === '1') return 'True';
+        else return '';
     }
 
 }

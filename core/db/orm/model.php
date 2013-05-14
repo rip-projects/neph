@@ -12,10 +12,10 @@ use \Xinix\Neph\Message\Message;
 class Model {
     public $connection = '';
     public $alias;
+    public $columns;
 
     protected $key = 'id';
     protected $name;
-    protected $columns;
     protected $hidden = array();
     protected $transient = array();
     protected $system_keys = array(
@@ -28,8 +28,9 @@ class Model {
     );
     protected $options = array();
 
-    protected $attributes;
-    protected $original;
+    protected $identifier;
+    protected $attributes = array();
+    protected $original = array();
     protected $exists = false;
     protected $filter;
 
@@ -52,10 +53,13 @@ class Model {
         // after everything is ready, update the attributes
         if (!empty($attributes)) {
             $this->fill($attributes);
-        } else {
-            $this->attributes = $attributes;
+            $this->identifier = $attributes[$this->key()];
+            $this->original = $this->attributes;
         }
-        $this->original = $this->attributes;
+    }
+
+    public function identifier() {
+        return $this->identifier;
     }
 
     public function set($key, $value) {
@@ -88,8 +92,12 @@ class Model {
         return (empty($key_name)) ? $this->key : get($this->system_keys, $key_name);
     }
 
-    public function columns() {
-        return $this->collection()->columns();
+    public function prepare_columns(&$columns) {
+
+    }
+
+    protected function column($key = '', $type = 3) {
+        return $this->collection()->column($key, $type);
     }
 
     public function hidden() {
@@ -99,7 +107,7 @@ class Model {
     protected function filter_config() {
         if (!isset($this->filter)) {
             $this->filter = array();
-            foreach ($this->columns() as $key => $item) {
+            foreach ($this->column() as $key => $item) {
                 $f = get($item, 'filter');
                 if (empty($f)) continue;
                 $this->filter[$key] = $f;
@@ -122,47 +130,48 @@ class Model {
     }
 
     public function save() {
-        $columns = $this->columns();
         $now = new \DateTime();
         $user_id = get(Auth::user(), 'id');
 
-        if ($this->system_keys['status'] && isset($columns[$this->system_keys['status']])) {
-            if (!isset($this->attributes[$this->system_keys['status']])) {
-                $this->attributes[$this->system_keys['status']] = 1;
-            }
+        if ($this->system_keys['status'] && !isset($this->attributes[$this->system_keys['status']]) && $this->column($this->system_keys['status'])) {
+            $this->attributes[$this->system_keys['status']] = 1;
         }
 
-        if (!$this->exists) {
-            if ($this->system_keys['created_time'] && isset($columns[$this->system_keys['created_time']])) {
+        if (!$this->exists()) {
+            if ($this->system_keys['created_time'] && $this->column($this->system_keys['created_time'])) {
                 $this->attributes[$this->system_keys['created_time']] = $now;
             }
-            if ($this->system_keys['created_by'] && isset($columns[$this->system_keys['created_by']])) {
+            if ($this->system_keys['created_by'] && $this->column($this->system_keys['created_by'])) {
                 $this->attributes[$this->system_keys['created_by']] = $user_id;
             }
         }
 
-        if ($this->system_keys['updated_time'] && isset($columns[$this->system_keys['updated_time']])) {
+        if ($this->system_keys['updated_time'] && $this->column($this->system_keys['updated_time'])) {
             $this->attributes[$this->system_keys['updated_time']] = $now;
         }
-        if ($this->system_keys['updated_by'] && isset($columns[$this->system_keys['updated_by']])) {
+        if ($this->system_keys['updated_by'] && $this->column($this->system_keys['updated_by'])) {
             $this->attributes[$this->system_keys['updated_by']] = $user_id;
         }
 
-        // \Console::log($this->attributes);
-        // exit;
 
         // FIXME should we validate first of cleanup first?
         if (!$this->valid()) {
             return 0;
         }
-        $this->attributes = $this->cleanup($this->attributes);
 
-        if ($this->exists) {
+        $this->cleanup();
+
+        return $this->_save();
+    }
+
+    function _save() {
+
+        if ($this->exists()) {
             $result = $this->collection()
                 ->where($this->key, '=', $this->attributes[$this->key])
                 ->update($this->attributes);
         } else {
-            $result = $this->attributes[$this->key] = $this->collection()
+            $result = $this->identifier = $this->attributes[$this->key] = $this->collection()
                 ->insert_get_id($this->attributes);
         }
         $this->exists = true;
@@ -171,18 +180,16 @@ class Model {
         else return 1;
     }
 
-    function cleanup($attrs) {
-        foreach ($attrs as $key => $attr) {
+    function cleanup() {
+        foreach ($this->attributes as $key => $attr) {
             if (in_array($key, $this->transient)) {
-                unset($attrs[$key]);
-                continue;
+                unset($this->attributes[$key]);
             }
         }
-        return $attrs;
     }
 
     public function delete() {
-        if ($this->exists) {
+        if ($this->exists()) {
             $result = $this->collection()->where($this->key, '=', $this->attributes[$this->key])->delete();
             return $result;
         }
@@ -194,8 +201,10 @@ class Model {
             '@url' => URL::site('/'.$this->name.'/'.$this->attributes[$this->key()].'.json'),
         );
 
-        $columns = array_merge(array_keys($this->columns()), $this->transient);
-        $columns = array_diff($columns, $this->hidden);
+        $columns = array_merge($this->column('', Collection::COLUMN_KEYS), $this->transient);
+        if (!empty($this->hidden)) {
+            $columns = array_diff($columns, $this->hidden);
+        }
 
         foreach ($columns as $column) {
             $attr[$column] = $this->get($column);
@@ -207,5 +216,9 @@ class Model {
         foreach((array) $attributes as $key => $value) {
             $this->set($key, $value);
         }
+    }
+
+    function __toString() {
+        return get_class().'::'.$this->name.' '.substr(print_r($this->attributes, 1), 6);
     }
 }

@@ -43,28 +43,15 @@ use \Xinix\Neph\Form\Form;
  */
 class Crud_Controller extends Controller {
 
-    protected $hidden;
-
     protected $name;
     protected $collection;
     protected $grid_config;
     protected $form_config;
     protected $filters = array();
+    protected $options = array();
 
     public function __construct() {
         parent::__construct();
-
-        if (!isset($this->hidden)) {
-            $this->hidden = Config::get('crud.controller.hidden', array(
-                'id',
-                'position',
-                'status',
-                'created_by',
-                'created_time',
-                'updated_by',
-                'updated_time'
-            ));
-        }
 
         if (empty($this->name)) {
             $name = explode('_', class_basename($this));
@@ -76,6 +63,8 @@ class Crud_Controller extends Controller {
 
         if (DB::check($this->name)) {
             $this->collection = IoC::resolve('orm.manager')->collection($this->name);
+        } else {
+            throw new \Exception('No "'.$this->name.'" table available');
         }
 
         $self = $this;
@@ -114,9 +103,19 @@ class Crud_Controller extends Controller {
 
     protected function grid_config() {
         if (!isset($this->grid_config)) {
-            $meta = $this->collection->columns();
+            $hidden = Config::get('crud.controller.hidden_on_grid', array(
+                'id',
+                'position',
+                'parent',
+                'status',
+                'created_by',
+                'created_time',
+                'updated_by',
+                'updated_time'
+            ));
+            $meta = $this->collection->column();
             $this->grid_config = array(
-                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'columns' => array_diff(array_keys($meta), $hidden),
                 'meta' => $meta,
                 'actions' => array(
                     'edit' => '/'.$this->name.'/edit',
@@ -130,9 +129,18 @@ class Crud_Controller extends Controller {
 
     protected function form_config() {
         if (!isset($this->form_config)) {
-            $meta = $this->collection->columns();
+            $hidden = Config::get('crud.controller.hidden_on_form', array(
+                'id',
+                'position',
+                'status',
+                'created_by',
+                'created_time',
+                'updated_by',
+                'updated_time'
+            ));
+            $meta = $this->collection->column();
             $this->form_config = array(
-                'columns' => array_diff(array_keys($meta), $this->hidden),
+                'columns' => array_diff(array_keys($meta), $hidden),
                 'meta' => $meta,
                 'actions' => array(
                     'edit' => '/'.$this->name.'/edit',
@@ -252,7 +260,7 @@ class Crud_Controller extends Controller {
             if (Request::instance()->is_rest()) {
                 return Response::redirect('/'.$this->name.'/'.$entry->get('id'));
             } else {
-                return Response::redirect('/'.$this->name.'/entry/'.$entry->get('id'));
+                return $this->route_post_save($entry);
             }
         } else {
             $form = new Form($this->form_config());
@@ -267,6 +275,10 @@ class Crud_Controller extends Controller {
 
     }
 
+    public function route_post_save($entry) {
+        return Response::redirect('/'.$this->name.'/entries');
+    }
+
     public function post_edit($id) {
 
         $entry = Request::instance()->data();
@@ -278,12 +290,18 @@ class Crud_Controller extends Controller {
 
         Message::success(($result) ? 'Record updated.' : 'No update for same record.');
 
-        if (Request::instance()->is_rest()) {
-            return Response::redirect('/'.$this->name.'/'.$id);
-        } elseif ($result) {
-            return Response::redirect('/'.$this->name.'/entry/'.$id);
+        if ($result) {
+            if (Request::instance()->is_rest()) {
+                return Response::redirect('/'.$this->name.'/'.$id);
+            } else {
+                return $this->route_post_save($entry);
+            }
         } else {
-            return Response::redirect('/'.$this->name.'/edit/'.$id);
+            if (Request::instance()->is_rest()) {
+                return array('error' => new \Exception('Error on save'));
+            } else {
+                return Response::redirect('/'.$this->name.'/edit/'.$id);
+            }
         }
     }
 }

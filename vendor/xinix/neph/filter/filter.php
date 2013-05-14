@@ -146,7 +146,7 @@ class Filter {
     }
 
     function filter_required($key, $value) {
-        if (empty($value)) {
+        if (!isset($value) || is_null($value)) {
             throw FilterError::instance(array($this->aliases[$key]));
         }
     }
@@ -161,6 +161,14 @@ class Filter {
 
     function filter_integer($key, $value) {
         if (filter_var($value, FILTER_VALIDATE_INT) === false) throw FilterError::instance(array($this->aliases[$key]));
+    }
+
+    function filter_boolean($key, &$value) {
+        if ($value !== '') {
+            unset($value);
+            return;
+        }
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 
     function filter_datetime($key, $value) {

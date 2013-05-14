@@ -28,14 +28,16 @@ class Config {
 		$env = $this->get('config.environment', 'development');
 		$this->path(Neph::path('site').Neph::site().'/config/'.$env.'/');
 
-		if (!$this->get('config.url')) {
-			if ($this->get('config.index')) {
-				$sep = $this->get('config.index').((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '');
-				$req = explode($sep, $_SERVER['REQUEST_URI'], 2);
-				$domain = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) );
-				$url = $domain.$req[0];
-				$this->set('config.url', $url);
-				$this->set('config.base_path', $req[0]);
+		if (!is_cli()) {
+			if (!$this->get('config.url')) {
+				if ($this->get('config.index')) {
+					$sep = $this->get('config.index').((isset($_SERVER['PATH_INFO'])) ? $_SERVER['PATH_INFO'] : '');
+					$req = explode($sep, $_SERVER['REQUEST_URI'], 2);
+					$domain = (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].($_SERVER['SERVER_PORT'] == 80 ? '' : (':'.$_SERVER['SERVER_PORT']) );
+					$url = $domain.$req[0];
+					$this->set('config.url', $url);
+					$this->set('config.base_path', $req[0]);
+				}
 			}
 		}
 

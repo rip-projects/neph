@@ -4,7 +4,14 @@ use \Neph\Core\Request;
 use \Neph\Core\URL;
 ?>
 
-<form method="POST">
+<form method="POST" autocomplete = "off">
+    <div>
+        <?php if (!$readonly): ?>
+        <input type="submit" class="btn btn-primary" value="<?php echo l('Save') ?>" />
+        <?php endif ?>
+        <a href="<?php echo URL::site('/'.Request::instance()->uri->segments[1].'/entries') ?>" class="btn">Back</a>
+    </div>
+    <hr/>
     <div>
         <?php foreach($self->columns as $column): ?>
         <div class="row-fluid">
@@ -17,6 +24,9 @@ use \Neph\Core\URL;
         </div>
         <?php endforeach ?>
     </div>
+
+    <hr/>
+
     <div>
         <?php if (!$readonly): ?>
         <input type="submit" class="btn btn-primary" value="<?php echo l('Save') ?>" />
@@ -24,3 +34,7 @@ use \Neph\Core\URL;
         <a href="<?php echo URL::site('/'.Request::instance()->uri->segments[1].'/entries') ?>" class="btn">Back</a>
     </div>
 </form>
+
+<script type="text/javascript">
+    $('form').find('input, select').not('[type=submit]').first().focus();
+</script>

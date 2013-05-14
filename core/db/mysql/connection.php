@@ -47,7 +47,7 @@ class Connection extends \Neph\Core\DB\Connection {
                 $c1['dbtype'] = $t[0];
 
                 if ($c1['type'] == 'integer' && $auto_increment = preg_match('/auto_increment/', $col->extra)) {
-                    $c1['auto_increment'] = $auto_increment;
+                    $c1['increment'] = $auto_increment;
                 } elseif ($col->null == 'NO') {
                     $c1['filter'][] = 'required';
                     if (!in_array($c1['type'], array('string', 'text', 'password'))) {
